@@ -16,6 +16,9 @@ var currentActiveIndex = 0;
 
 var currentTableTab = 'active';
 
+var formPendingBase64 = null;
+var isFormImageRemoved = false;
+
 var currentUser = {
   loggedIn: false,
   role: '',
@@ -1283,6 +1286,74 @@ function handleLogout() {
   showToast('ออกจากระบบเรียบร้อยแล้ว', 'info');
 }
 
+/**
+ * 📷 จัดการเมื่อผู้ใช้ถ่ายภาพหรือเลือกไฟล์ในฟอร์มแจ้งชำรุด
+ */
+function handleFormImageSelected(event) {
+  var file = event.target.files[0];
+  if (!file) return;
+
+  if (file.size > 8 * 1024 * 1024) {
+    showToast('⚠️ ขนาดไฟล์ภาพต้องไม่เกิน 8 MB', 'error');
+    event.target.value = '';
+    return;
+  }
+
+  readFileAsBase64(file, function(b64) {
+    if (b64) {
+      formPendingBase64 = { base64: b64, type: 'image/jpeg' };
+      isFormImageRemoved = false;
+      document.getElementById('formImagePreview').src = b64;
+      document.getElementById('formImagePreviewContainer').style.display = 'flex';
+      document.getElementById('formImagePreviewLabel').innerHTML = '<i class="fa-solid fa-circle-check text-emerald"></i> เลือกภาพใหม่แล้ว:';
+    }
+  });
+}
+
+function clearFormImagePreview() {
+  formPendingBase64 = null;
+  isFormImageRemoved = true;
+  document.getElementById('fImageFileCamera').value = '';
+  document.getElementById('fImageFileGallery').value = '';
+  document.getElementById('fExistingImageId').value = '';
+  document.getElementById('formImagePreview').src = '';
+  document.getElementById('formImagePreviewContainer').style.display = 'none';
+  showToast('ลบภาพเรียบร้อยแล้ว', 'info');
+}
+
+/**
+ * 📷 จัดการเมื่อผู้ใช้ถ่ายภาพหรือเลือกไฟล์ในฟอร์มปรับปรุงเสร็จสิ้น
+ */
+function handleResolveImageSelected(event) {
+  var file = event.target.files[0];
+  if (!file) return;
+
+  if (file.size > 8 * 1024 * 1024) {
+    showToast('⚠️ ขนาดไฟล์ภาพต้องไม่เกิน 8 MB', 'error');
+    event.target.value = '';
+    return;
+  }
+
+  readFileAsBase64(file, function(b64) {
+    if (b64) {
+      pendingResolveBase64 = { base64: b64, type: 'image/jpeg' };
+      document.getElementById('resolveImagePreview').src = b64;
+      document.getElementById('resolveImagePreviewBox').style.display = 'flex';
+    }
+  });
+}
+
+function clearResolveImagePreview() {
+  pendingResolveBase64 = null;
+  document.getElementById('resolveCameraInput').value = '';
+  document.getElementById('resolveGalleryInput').value = '';
+  document.getElementById('resolveImagePreview').src = '';
+  document.getElementById('resolveImagePreviewBox').style.display = 'none';
+}
+
+/**
+ * 🌟 อัปเดต openAddModal ให้รีเซ็ตพรีวิวภาพ
+ */
 function openAddModal() {
   if (!currentUser.loggedIn) {
     showToast('กรุณาเข้าสู่ระบบเจ้าหน้าที่ก่อนเพิ่มรายการ', 'error');
@@ -1294,6 +1365,11 @@ function openAddModal() {
   document.getElementById('reportForm').reset();
   document.getElementById('fRowIndex').value = '';
   document.getElementById('fExistingImageId').value = '';
+  
+  formPendingBase64 = null;
+  isFormImageRemoved = false;
+  document.getElementById('formImagePreviewContainer').style.display = 'none';
+  document.getElementById('formImageHint').style.display = 'none';
 
   var deptSelect = document.getElementById('fDepartment');
   deptSelect.value = (currentUser.role === 'officer') ? currentUser.dept : deptSelect.value;
@@ -1302,6 +1378,9 @@ function openAddModal() {
   document.getElementById('reportFormModal').style.display = 'flex';
 }
 
+/**
+ * 🌟 อัปเดต openEditModalFromCurrentItem ให้แสดงพรีวิวภาพเดิม (ถ้ามี)
+ */
 function openEditModalFromCurrentItem() {
   if (!currentUser.loggedIn) {
     showToast('กรุณาเข้าสู่ระบบเจ้าหน้าที่ก่อนแก้ไขข้อมูล', 'error');
@@ -1325,12 +1404,84 @@ function openEditModalFromCurrentItem() {
   document.getElementById('fLng').value = item.lng;
   document.getElementById('fNotes').value = item.notes !== '-' ? item.notes : '';
 
+  formPendingBase64 = null;
+  isFormImageRemoved = false;
+
+  // หากมีรูปภาพเดิม ให้แสดงพรีวิวภาพเดิมทันที
+  if (item.imageUrl && item.imageId) {
+    document.getElementById('formImagePreview').src = item.imageUrl;
+    document.getElementById('formImagePreviewContainer').style.display = 'flex';
+    document.getElementById('formImagePreviewLabel').innerHTML = '<i class="fa-solid fa-image"></i> ภาพเดิมในระบบ:';
+    document.getElementById('formImageHint').style.display = 'block';
+  } else {
+    document.getElementById('formImagePreviewContainer').style.display = 'none';
+    document.getElementById('formImageHint').style.display = 'none';
+  }
+
   var deptSelect = document.getElementById('fDepartment');
   deptSelect.value = item.department;
   deptSelect.disabled = (currentUser.role === 'officer');
 
   closeModal('detailModal');
   document.getElementById('reportFormModal').style.display = 'flex';
+}
+
+/**
+ * 🌟 อัปเดต handleFormSubmit ให้ส่ง base64 ของภาพที่เลือก
+ */
+function handleFormSubmit(e) {
+  e.preventDefault();
+  if (!currentUser.loggedIn) {
+    showToast('กรุณาเข้าสู่ระบบเจ้าหน้าที่ก่อนบันทึกข้อมูล', 'error');
+    openAuthModal();
+    return;
+  }
+
+  var btn = document.getElementById('fSubmitBtn');
+  btn.disabled = true;
+  btn.innerText = 'กำลังบันทึกข้อมูลและอัปโหลดภาพ...';
+
+  var deptSelect = document.getElementById('fDepartment');
+  var formData = {
+    rowIndex: document.getElementById('fRowIndex').value,
+    existingImageId: isFormImageRemoved ? '' : document.getElementById('fExistingImageId').value,
+    category: document.getElementById('fCategory').value,
+    department: deptSelect.value,
+    parkName: document.getElementById('fParkName').value.trim(),
+    area: document.getElementById('fArea').value.trim(),
+    issue: document.getElementById('fIssue').value.trim(),
+    urgency: document.getElementById('fUrgency').value,
+    lat: document.getElementById('fLat').value,
+    lng: document.getElementById('fLng').value,
+    notes: document.getElementById('fNotes').value.trim(),
+    imageFile: formPendingBase64
+  };
+
+  fetch(API_URL, {
+    method: 'POST',
+    body: JSON.stringify({
+      action: 'saveOrUpdate',
+      formData: formData,
+      userCode: currentUser.code
+    })
+  })
+    .then(res => res.json())
+    .then(res => {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> บันทึกข้อมูล';
+      if (res.success) {
+        showToast(res.message, 'success');
+        closeModal('reportFormModal');
+        loadReports();
+      } else {
+        showToast(res.message, 'error');
+      }
+    })
+    .catch(err => {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> บันทึกข้อมูล';
+      showToast('เกิดข้อผิดพลาด: ' + err.message, 'error');
+    });
 }
 
 function readFileAsBase64(file, callback) {
