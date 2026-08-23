@@ -1390,3 +1390,41 @@ svg.leaflet-zoom-animated,
   .form-grid { grid-template-columns: 1fr; }
   .gps-btn-group { grid-template-columns: 1fr; }
 }
+
+/* 🌟 ปุ่มลอยสำหรับกดค้นหาตำแหน่ง GPS ปัจจุบัน */
+.btn-map-locate {
+  position: absolute;
+  top: 126px; /* อยู่ใต้ปุ่มรีเซ็ต กทม. */
+  left: 12px;
+  z-index: 1000;
+  background: #ffffff;
+  border: 2px solid rgba(0, 0, 0, 0.15);
+  color: #0284c7;
+  width: 34px;
+  height: 34px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  cursor: pointer;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+}
+
+.btn-map-locate:hover {
+  background: #e0f2fe;
+  color: #0369a1;
+  transform: scale(1.05);
+}
+
+.btn-map-locate.is-locating {
+  color: #ea580c;
+  animation: pulseGlow 1.2s infinite;
+}
+
+@keyframes pulseGlow {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(234, 88, 12, 0.4); }
+  70% { transform: scale(1.08); box-shadow: 0 0 0 8px rgba(234, 88, 12, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(234, 88, 12, 0); }
+}
