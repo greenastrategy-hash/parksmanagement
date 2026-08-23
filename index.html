@@ -347,16 +347,15 @@
             📷 ภาพถ่ายหลังการปรับปรุง (ถ้ามี)
           </label>
           
-          <input type="file" id="resolveCameraInput" accept="image/*" capture="environment" style="display: none;" onchange="handleResolveImageSelected(event)">
-          <input type="file" id="resolveGalleryInput" accept="image/*" style="display: none;" onchange="handleResolveImageSelected(event)">
-
           <div class="image-upload-btn-group">
-            <button type="button" class="btn-img-action btn-camera" onclick="document.getElementById('resolveCameraInput').click()">
+            <label class="btn-img-action btn-camera">
               <i class="fa-solid fa-camera"></i> ถ่ายภาพ
-            </button>
-            <button type="button" class="btn-img-action btn-gallery" onclick="document.getElementById('resolveGalleryInput').click()">
+              <input type="file" id="resolveCameraInput" accept="image/jpeg,image/png,image/webp,image/*" capture="environment" onchange="handleResolveImageSelected(event)" class="native-hidden-input">
+            </label>
+            <label class="btn-img-action btn-gallery">
               <i class="fa-solid fa-images"></i> เลือกจากคลังภาพ
-            </button>
+              <input type="file" id="resolveGalleryInput" accept="image/jpeg,image/png,image/webp,image/*" onchange="handleResolveImageSelected(event)" class="native-hidden-input">
+            </label>
           </div>
 
           <div id="resolveImagePreviewBox" class="image-preview-wrapper" style="display: none;">
@@ -484,20 +483,20 @@
           </button>
         </div>
 
-        <!-- ส่วนแนบภาพ: ถ่ายภาพ / เลือกไฟล์ พร้อมพรีวิว -->
+        <!-- ส่วนแนบภาพ: ถ่ายภาพ & เลือกจากคลังภาพ (รองรับมือถือ 100%) -->
         <div class="form-group">
           <label><i class="fa-solid fa-camera"></i> ภาพถ่ายความเสียหาย</label>
           
-          <input type="file" id="fImageFileCamera" accept="image/*" capture="environment" style="display: none;" onchange="handleFormImageSelected(event)">
-          <input type="file" id="fImageFileGallery" accept="image/*" style="display: none;" onchange="handleFormImageSelected(event)">
-          
           <div class="image-upload-btn-group">
-            <button type="button" class="btn-img-action btn-camera" onclick="document.getElementById('fImageFileCamera').click()">
+            <label class="btn-img-action btn-camera">
               <i class="fa-solid fa-camera"></i> ถ่ายภาพ
-            </button>
-            <button type="button" class="btn-img-action btn-gallery" onclick="document.getElementById('fImageFileGallery').click()">
+              <input type="file" id="fImageFileCamera" accept="image/jpeg,image/png,image/webp,image/*" capture="environment" onchange="handleFormImageSelected(event)" class="native-hidden-input">
+            </label>
+
+            <label class="btn-img-action btn-gallery">
               <i class="fa-solid fa-images"></i> เลือกจากคลังภาพ
-            </button>
+              <input type="file" id="fImageFileGallery" accept="image/jpeg,image/png,image/webp,image/*" onchange="handleFormImageSelected(event)" class="native-hidden-input">
+            </label>
           </div>
 
           <div id="formImagePreviewContainer" class="image-preview-wrapper" style="display: none;">
