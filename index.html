@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ระบบติดตามและแจ้งชำรุดเสียหาย</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Leaflet & FontAwesome -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Chart.js & ChartDataLabels Plugin -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Toast Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- Map Pick Banner -->
+  <div id="mapPickerBanner" class="map-picker-banner" style="display: none;">
+    <span><i class="fa-solid fa-hand-pointer"></i> กรุณาแตะ/คลิกบนแผนที่เพื่อระบุตำแหน่ง</span>
+    <button type="button" class="btn-cancel-pick" onclick="cancelMapPinPick()">ยกเลิก</button>
+  </div>
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand">
+        <i class="fa-solid fa-map-location-dot brand-icon"></i>
+        <div>
+          <h1>ระบบติดตามและแจ้งชำรุดเสียหาย</h1>
+          <p>แผนที่ระบุพิกัดความเสียหายและระดับความเร่งด่วนในพื้นที่สวนสาธารณะ (กทม.)</p>
+        </div>
+      </div>
+
+      <button class="btn-menu-toggle" id="btnMenuToggle" onclick="toggleMobileMenu()">
+        <i class="fa-solid fa-sliders"></i> ตัวกรอง/เมนู
+      </button>
+      
+      <div class="header-actions" id="headerActions">
+        <div class="header-controls-row header-controls-row-1">
+          <div id="userBadge" class="user-badge" style="display: none;">
+            <i class="fa-solid fa-circle-user"></i> <span id="userBadgeText">-</span>
+          </div>
+          <button id="btnDashboard" class="btn-action btn-dashboard" onclick="openDashboardModal()">
+            <i class="fa-solid fa-chart-pie"></i> แดชบอร์ดสถิติ
+          </button>
+          <button id="btnAddReport" class="btn-action btn-add" onclick="openAddModal()" style="display: none;">
+            <i class="fa-solid fa-plus"></i> เพิ่มรายการ
+          </button>
+          <button id="btnLogin" class="btn-action btn-login" onclick="openAuthModal()">
+            <i class="fa-solid fa-key"></i> เจ้าหน้าที่
+          </button>
+          <button id="btnLogout" class="btn-action btn-logout" onclick="handleLogout()" style="display: none;">
+            <i class="fa-solid fa-right-from-bracket"></i> ออก
+          </button>
+        </div>
+
+        <div class="header-controls-row header-controls-row-2">
+          <button id="btnTable" class="btn-action btn-table" onclick="openTableModal()">
+            <i class="fa-solid fa-table-list"></i> ตารางข้อมูล
+          </button>
+          <select id="departmentFilter" class="header-filter-select" onchange="onDepartmentFilterChange()">
+            <option value="all">🏢 ทุกฝ่าย</option>
+            <option value="ฝ่ายบริหารจัดการพื้นที่สีเขียว 1">ฝบข.1</option>
+            <option value="ฝ่ายบริหารจัดการพื้นที่สีเขียว 2">ฝบข.2</option>
+            <option value="ฝ่ายบริหารจัดการพื้นที่สีเขียว 3">ฝบข.3</option>
+            <option value="ฝ่ายบริหารจัดการพื้นที่สีเขียว 4">ฝบข.4</option>
+            <option value="ฝ่ายบริหารจัดการพื้นที่สีเขียว 5">ฝบข.5</option>
+            <option value="ฝ่ายบริหารจัดการพื้นที่สีเขียว 6">ฝบข.6</option>
+          </select>
+          <select id="parkFilter" class="header-filter-select" onchange="filterMarkers()">
+            <option value="all">🌳 ทุกสวน</option>
+          </select>
+          <select id="categoryFilter" class="header-filter-select" onchange="filterMarkers()">
+            <option value="all">📁 ทุกหมวดหมู่</option>
+            <option value="สุขา">🚻 สุขา</option>
+            <option value="ลานจอดรถ">🅿️ ลานจอดรถ</option>
+            <option value="สนามกีฬา">⚽ สนามกีฬา</option>
+            <option value="เส้นทางออกกำลังกาย">🏃 ลู่วิ่ง/ทางเดิน</option>
+            <option value="สนามเด็กเล่น">🧩 สนามเด็กเล่น</option>
+            <option value="เครื่องออกกำลังกายกลางแจ้ง">🏋️ เครื่องออกกำลังกาย</option>
+          </select>
+          <select id="urgencyFilter" class="header-filter-select" onchange="filterMarkers()">
+            <option value="all">⚡ ทุกระดับความเสี่ยง</option>
+            <option value="5">🔴 ระดับ 5: อันตรายร้ายแรง</option>
+            <option value="4">🟠 ระดับ 4: อันตรายสูง</option>
+            <option value="3">🟡 ระดับ 3: เฝ้าระวัง</option>
+            <option value="2">🟢 ระดับ 2: ความเสี่ยงต่ำ</option>
+            <option value="1">⚪ ระดับ 1: ชำรุดตามอายุงาน</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Summary Stats Bar -->
+  <div class="stats-bar">
+    <div class="stats-container">
+      <span class="stat-pill stat-total">
+        <i class="fa-solid fa-list-check"></i> รวมทั้งหมด: <strong id="statTotal">0</strong> รายการ
+      </span>
+      <span class="stat-pill" title="อันตรายร้ายแรง (เสี่ยงภัยสูงสุด)">
+        <span class="badge" style="background-color: #7f1d1d;"></span> ระดับ 5: <strong id="statUrg5">0</strong>
+      </span>
+      <span class="stat-pill" title="อันตรายสูง (กระทบการใช้งานหลัก)">
+        <span class="badge" style="background-color: #ea580c;"></span> ระดับ 4: <strong id="statUrg4">0</strong>
+      </span>
+      <span class="stat-pill" title="เฝ้าระวัง (เริ่มชำรุดเสียหาย)">
+        <span class="badge" style="background-color: #eab308;"></span> ระดับ 3: <strong id="statUrg3">0</strong>
+      </span>
+      <span class="stat-pill" title="ความเสี่ยงต่ำ (ชำรุดเล็กน้อย)">
+        <span class="badge" style="background-color: #16a34a;"></span> ระดับ 2: <strong id="statUrg2">0</strong>
+      </span>
+      <span class="stat-pill" title="สภาพปกติ / ชำรุดตามอายุงาน">
+        <span class="badge" style="background-color: #94a3b8;"></span> ระดับ 1: <strong id="statUrg1">0</strong>
+      </span>
+    </div>
+  </div>
+
+  <!-- Map Container -->
+  <div class="map-wrapper">
+    <div id="map"></div>
+    <button type="button" class="btn-map-focus" title="รีเซ็ตมุมมอง กทม." onclick="resetMapToDefaultView()">
+      <i class="fa-solid fa-expand"></i>
+    </button>
+  </div>
+
+  <!-- Footer -->
+  <footer class="app-footer">
+    <p>&copy; 2026 ส่วนยุทธศาสตร์พื้นที่สีเขียว สำนักงานบริหารจัดการพื้นที่สีเขียว สำนักสิ่งแวดล้อม</p>
+  </footer>
+
+  <!-- Modal: Table Data -->
+  <div id="tableModal" class="modal">
+    <div class="modal-content table-modal-card">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <h3><i class="fa-solid fa-table-list"></i> ตารางข้อมูลการแจ้งชำรุดเสียหาย</h3>
+          <span id="tableCountBadge" class="pagination-badge">0 รายการ</span>
+        </div>
+        <button class="close-btn" onclick="closeModal('tableModal')">&times;</button>
+      </div>
+      <div class="modal-body table-modal-body">
+        <div class="table-tabs-nav">
+          <button type="button" class="table-tab-btn active" id="tabBtnActive" onclick="switchTableTab('active')">
+            <i class="fa-solid fa-triangle-exclamation"></i> รายการรอปรับปรุง (<span id="tabCountActive">0</span>)
+          </button>
+          <button type="button" class="table-tab-btn" id="tabBtnResolved" onclick="switchTableTab('resolved')">
+            <i class="fa-solid fa-circle-check"></i> ประวัติปรับปรุงเสร็จสิ้น (<span id="tabCountResolved">0</span>)
+          </button>
+        </div>
+        <div class="table-toolbar">
+          <div class="table-filter-info" id="tableFilterInfo"></div>
+          <div class="table-search-box">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input type="text" id="tableSearchInput" oninput="filterTableSearch()" placeholder="ค้นหาในตาราง..." class="form-input table-search-input">
+          </div>
+        </div>
+        <div class="table-responsive-container">
+          <table class="custom-data-table" id="reportDataTable">
+            <thead id="reportDataTableHead"></thead>
+            <tbody id="reportDataTableBody">
+              <tr><td colspan="11" class="text-center py-4 text-muted">กำลังโหลดข้อมูล...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer table-modal-footer">
+        <span class="table-footer-summary" id="tableFooterSummary">แสดง 0 รายการ</span>
+        <button type="button" class="nav-btn" onclick="closeModal('tableModal')">ปิดหน้าต่าง</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Dashboard -->
+  <div id="dashboardModal" class="modal">
+    <div class="modal-content dashboard-card">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <h3><i class="fa-solid fa-chart-pie"></i> แดชบอร์ดสถิติและภาพรวม</h3>
+        </div>
+        <button class="close-btn" onclick="closeModal('dashboardModal')">&times;</button>
+      </div>
+      <div class="modal-body scrollable-body dashboard-body">
+        <div class="dashboard-filter-indicator" id="dashFilterIndicator"></div>
+        <div class="dashboard-kpi-grid">
+          <div class="dash-kpi-card kpi-active">
+            <div class="kpi-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+            <div class="kpi-data">
+              <span class="kpi-label">จุดชำรุดรอปรับปรุง</span>
+              <strong class="kpi-value" id="kpiActiveCount">0</strong>
+            </div>
+          </div>
+          <div class="dash-kpi-card kpi-critical">
+            <div class="kpi-icon"><i class="fa-solid fa-bell"></i></div>
+            <div class="kpi-data">
+              <span class="kpi-label">วิกฤต (L4-L5)</span>
+              <strong class="kpi-value" id="kpiCriticalCount">0</strong>
+            </div>
+          </div>
+          <div class="dash-kpi-card kpi-resolved">
+            <div class="kpi-icon"><i class="fa-solid fa-circle-check"></i></div>
+            <div class="kpi-data">
+              <span class="kpi-label">ปรับปรุงเสร็จสิ้นแล้ว</span>
+              <strong class="kpi-value" id="kpiResolvedCount">0</strong>
+            </div>
+          </div>
+          <div class="dash-kpi-card kpi-rate">
+            <div class="kpi-icon"><i class="fa-solid fa-percent"></i></div>
+            <div class="kpi-data">
+              <span class="kpi-label">อัตราความสำเร็จ</span>
+              <strong class="kpi-value" id="kpiResolutionRate">0%</strong>
+            </div>
+          </div>
+        </div>
+        <div class="dashboard-chart-grid">
+          <div class="chart-box">
+            <h4><i class="fa-solid fa-layer-group"></i> สัดส่วนแยกตามหมวดหมู่</h4>
+            <div class="chart-canvas-container"><canvas id="chartCategory"></canvas></div>
+          </div>
+          <div class="chart-box">
+            <h4><i class="fa-solid fa-gauge-high"></i> การกระจายตามระดับความเร่งด่วน</h4>
+            <div class="chart-canvas-container"><canvas id="chartUrgency"></canvas></div>
+          </div>
+        </div>
+        <div class="dashboard-chart-grid">
+          <div class="chart-box">
+            <h4><i class="fa-solid fa-building"></i> ปริมาณแยกตามฝ่าย 1-6</h4>
+            <div class="chart-canvas-container"><canvas id="chartDepartment"></canvas></div>
+          </div>
+          <div class="chart-box">
+            <h4><i class="fa-solid fa-tree"></i> 5 สวนสาธารณะที่พบจุดชำรุดสูงสุด</h4>
+            <div class="top-parks-list" id="topParksList">
+              <div class="text-center text-muted py-4">กำลังโหลดข้อมูล...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer" style="justify-content: flex-end;">
+        <button type="button" class="nav-btn" onclick="closeModal('dashboardModal')">ปิดหน้าต่าง</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Detail -->
+  <div id="detailModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <h3 id="modalTitle"><i class="fa-solid fa-circle-info"></i> รายละเอียดการชำรุด</h3>
+          <span id="modalPaginationBadge" class="pagination-badge">1/1</span>
+        </div>
+        <button class="close-btn" onclick="closeModal('detailModal')">&times;</button>
+      </div>
+      <div class="modal-body scrollable-body">
+        <div class="image-container" id="modalImageContainer">
+          <img id="modalImage" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E" alt="ภาพชำรุดเสียหาย" onerror="handleImageError(this)">
+          <div id="noImageFallback" class="no-image" style="display:none;">
+            <i class="fa-regular fa-image"></i> ไม่มีรูปภาพแนบ
+          </div>
+        </div>
+        <div class="info-cards-container">
+          <div class="info-card-block highlight-block">
+            <div class="block-title"><i class="fa-solid fa-triangle-exclamation"></i> สิ่งที่ชำรุด / ต้องการปรับปรุง</div>
+            <div class="block-content highlight-text" id="mIssue">-</div>
+          </div>
+          <div class="info-card-block">
+            <div class="block-row">
+              <span class="row-label"><i class="fa-solid fa-tree"></i> สวนสาธารณะ:</span>
+              <span class="row-value font-bold text-dark" id="mParkName">-</span>
+            </div>
+            <div class="block-row">
+              <span class="row-label"><i class="fa-solid fa-map-pin"></i> บริเวณ:</span>
+              <span class="row-value" id="mArea">-</span>
+            </div>
+            <div class="block-row">
+              <span class="row-label"><i class="fa-solid fa-building"></i> หน่วยงาน:</span>
+              <span class="row-value text-emerald" id="mDepartment">-</span>
+            </div>
+          </div>
+          <div class="info-card-block">
+            <div class="block-row">
+              <span class="row-label"><i class="fa-solid fa-tag"></i> หมวดหมู่:</span>
+              <span class="row-value" id="mCategory">-</span>
+            </div>
+            <div class="block-row">
+              <span class="row-label"><i class="fa-solid fa-gauge-high"></i> ระดับความเร่งด่วน:</span>
+              <span class="row-value" id="mUrgency">-</span>
+            </div>
+            <div class="block-row" id="mNotesRow">
+              <span class="row-label"><i class="fa-solid fa-comment-dots"></i> หมายเหตุ:</span>
+              <span class="row-value text-muted" id="mNotes">-</span>
+            </div>
+          </div>
+        </div>
+        <div id="adminActionsContainer" class="admin-actions-container" style="display: none;">
+          <button class="btn-resolve-action" onclick="onResolveButtonClick()">
+            <i class="fa-solid fa-circle-check"></i> ดำเนินการปรับปรุงเสร็จสิ้น
+          </button>
+          <button class="btn-edit-action" onclick="openEditModalFromCurrentItem()">
+            <i class="fa-solid fa-pen-to-square"></i> แก้ไขข้อมูล
+          </button>
+        </div>
+      </div>
+      <div class="modal-footer" id="modalFooterNav">
+        <button class="nav-btn" id="btnPrev" onclick="prevReportItem()">
+          <i class="fa-solid fa-chevron-left"></i> ก่อนหน้า
+        </button>
+        <span class="nav-status-text" id="navStatusText">รายการที่ 1 จาก 1</span>
+        <button class="nav-btn" id="btnNext" onclick="nextReportItem()">
+          ถัดไป <i class="fa-solid fa-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Resolve Action -->
+  <div id="resolveConfirmModal" class="modal" style="display: none;">
+    <div class="modal-content auth-card" style="max-width: 480px;">
+      <div class="modal-header">
+        <h3 style="margin: 0; font-size: 1.05rem; color: #166534;">
+          <i class="fa-solid fa-circle-check"></i> บันทึกการปรับปรุงเสร็จสิ้น
+        </h3>
+        <button class="close-btn" onclick="closeResolveConfirmModal()">&times;</button>
+      </div>
+      <div class="modal-body form-body" style="display: flex; flex-direction: column; gap: 12px;">
+        <div id="resolveSummaryInfo" style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 10px; font-size: 0.85rem; color: #14532d;"></div>
+        <div class="form-group" style="text-align: left;">
+          <label style="font-weight: 600; font-size: 0.85rem; color: #1e293b; display: block; margin-bottom: 4px;">
+            📝 รายละเอียดการดำเนินการ / วิธีแก้ไข <span style="color: #dc2626;">*</span>
+          </label>
+          <textarea id="resolveActionDetail" class="form-input" rows="3" placeholder="ระบุรายละเอียด เช่น เปลี่ยนอุปกรณ์ใหม่, ตัดแต่งกิ่งไม้..." required style="width: 100%;"></textarea>
+        </div>
+        <div class="form-group" style="text-align: left;">
+          <label style="font-weight: 600; font-size: 0.85rem; color: #1e293b; display: block; margin-bottom: 4px;">
+            📷 ภาพถ่ายหลังการปรับปรุง (ถ้ามี)
+          </label>
+          <input type="file" id="resolveImageInput" accept="image/*" class="form-input file-input" onchange="previewResolveImage(event)">
+          <div id="resolveImagePreviewBox" style="display: none; margin-top: 8px; text-align: center;">
+            <img id="resolveImagePreview" src="" alt="ภาพหลังปรับปรุง" style="max-height: 140px; border-radius: 6px; border: 1px solid #cbd5e1; object-fit: contain;">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 8px;">
+        <button type="button" class="btn-cancel-pick" onclick="closeResolveConfirmModal()" style="padding: 6px 14px;">ยกเลิก</button>
+        <button type="button" id="btnSubmitResolve" class="btn-submit" onclick="submitResolveAction()" style="padding: 6px 18px; width: auto; background: #16a34a;">
+          <i class="fa-solid fa-check"></i> บันทึกเสร็จสิ้น
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Auth -->
+  <div id="authModal" class="modal">
+    <div class="modal-content auth-card">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-lock"></i> ยืนยันรหัสเจ้าหน้าที่</h3>
+        <button class="close-btn" onclick="closeModal('authModal')">&times;</button>
+      </div>
+      <form onsubmit="handleAuthSubmit(event)" class="modal-body form-body">
+        <p class="auth-hint">กรุณากรอกรหัสแอดมินหรือรหัสฝ่ายบริหารจัดการพื้นที่สีเขียว</p>
+        <div class="form-group">
+          <input type="password" id="authCodeInput" placeholder="กรอกรหัสผ่าน 4-5 หลัก" required class="form-input text-center">
+        </div>
+        <button type="submit" id="authSubmitBtn" class="btn-submit">
+          <i class="fa-solid fa-arrow-right-to-bracket"></i> ยืนยันรหัส
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Form Add/Edit -->
+  <div id="reportFormModal" class="modal">
+    <div class="modal-content form-card">
+      <div class="modal-header">
+        <h3 id="formModalTitle"><i class="fa-solid fa-plus-circle"></i> บันทึกรายการแจ้งชำรุด</h3>
+        <button class="close-btn" onclick="closeModal('reportFormModal')">&times;</button>
+      </div>
+      <form id="reportForm" onsubmit="handleFormSubmit(event)" class="modal-body form-body scrollable-body">
+        <input type="hidden" id="fRowIndex">
+        <input type="hidden" id="fExistingImageId">
+        <div class="form-grid">
+          <div class="form-group">
+            <label><i class="fa-solid fa-tag"></i> หมวดหมู่สถานที่ *</label>
+            <select id="fCategory" required class="form-input">
+              <option value="สุขา">สุขา</option>
+              <option value="ลานจอดรถ">ลานจอดรถ</option>
+              <option value="สนามกีฬา">สนามกีฬา</option>
+              <option value="เส้นทางออกกำลังกาย">เส้นทางออกกำลังกาย</option>
+              <option value="สนามเด็กเล่น">สนามเด็กเล่น</option>
+              <option value="เครื่องออกกำลังกายกลางแจ้ง">เครื่องออกกำลังกายกลางแจ้ง</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label><i class="fa-solid fa-building"></i> หน่วยงานผู้รับผิดชอบ *</label>
+            <select id="fDepartment" required class="form-input">
+              <option value="ฝ่ายบริหารจัดการพื้นที่สีเขียว 1">ฝ่ายบริหารจัดการพื้นที่สีเขียว 1</option>
+              <option value="ฝ่ายบริหารจัดการพื้นที่สีเขียว 2">ฝ่ายบริหารจัดการพื้นที่สีเขียว 2</option>
+              <option value="ฝ่ายบริหารจัดการพื้นที่สีเขียว 3">ฝ่ายบริหารจัดการพื้นที่สีเขียว 3</option>
+              <option value="ฝ่ายบริหารจัดการพื้นที่สีเขียว 4">ฝ่ายบริหารจัดการพื้นที่สีเขียว 4</option>
+              <option value="ฝ่ายบริหารจัดการพื้นที่สีเขียว 5">ฝ่ายบริหารจัดการพื้นที่สีเขียว 5</option>
+              <option value="ฝ่ายบริหารจัดการพื้นที่สีเขียว 6">ฝ่ายบริหารจัดการพื้นที่สีเขียว 6</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label><i class="fa-solid fa-tree"></i> สวนสาธารณะ *</label>
+            <input type="text" id="fParkName" required placeholder="เช่น สวนลุมพินี, สวนเบญจกิติ" class="form-input">
+          </div>
+          <div class="form-group">
+            <label><i class="fa-solid fa-map-pin"></i> บริเวณที่พบ *</label>
+            <input type="text" id="fArea" required placeholder="เช่น ประตู 3, ข้างศาลาแปดเหลี่ยม" class="form-input">
+          </div>
+        </div>
+        <div class="form-group">
+          <label><i class="fa-solid fa-triangle-exclamation"></i> สิ่งที่ชำรุด / ต้องการปรับปรุง *</label>
+          <textarea id="fIssue" required rows="2" placeholder="ระบุรายละเอียดความเสียหาย" class="form-input"></textarea>
+        </div>
+        <div class="form-group">
+          <label><i class="fa-solid fa-gauge-high"></i> ระดับความเร่งด่วน *</label>
+          <select id="fUrgency" required class="form-input">
+            <option value="5">🔴 ระดับ 5: อันตรายร้ายแรง (สั่งปิดพื้นที่ / ต้องแก้ไขด่วนที่สุด)</option>
+            <option value="4">🟠 ระดับ 4: อันตรายสูง (เสี่ยงอุบัติเหตุ / งดใช้ชั่วคราว)</option>
+            <option value="3">🟡 ระดับ 3: เฝ้าระวัง (เริ่มชำรุด / ระมัดระวังการใช้งาน)</option>
+            <option value="2">🟢 ระดับ 2: ความเสี่ยงต่ำ (ชำรุดเล็กน้อย / ใช้งานได้ปกติ)</option>
+            <option value="1">⚪ ระดับ 1: ชำรุดตามอายุงาน (ไม่กระทบการใช้งาน)</option>
+          </select>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>ละติจูด (Lat) *</label>
+            <input type="number" step="any" id="fLat" required placeholder="13.xxxx" class="form-input">
+          </div>
+          <div class="form-group">
+            <label>ลองจิจูด (Lng) *</label>
+            <input type="number" step="any" id="fLng" required placeholder="100.xxxx" class="form-input">
+          </div>
+        </div>
+        <div class="gps-btn-group">
+          <button type="button" class="btn-gps" onclick="getCurrentGPSLocation()">
+            <i class="fa-solid fa-location-crosshairs"></i> ดึง GPS
+          </button>
+          <button type="button" class="btn-map-pick" onclick="startMapPinPick()">
+            <i class="fa-solid fa-map-pin"></i> 📍 จิ้มบนแผนที่
+          </button>
+          <button type="button" class="btn-map-center" onclick="useMapCenterCoordinate()">
+            <i class="fa-solid fa-crosshairs"></i> 🎯 กึ่งกลางแผนที่
+          </button>
+        </div>
+        <div class="form-group">
+          <label><i class="fa-solid fa-camera"></i> ภาพถ่ายความเสียหาย</label>
+          <input type="file" id="fImageFile" accept="image/*" class="form-input file-input">
+          <small class="form-hint">หากไม่เลือกไฟล์ใหม่ ระบบจะใช้ภาพเดิมที่มีอยู่</small>
+        </div>
+        <div class="form-group">
+          <label><i class="fa-solid fa-comment-dots"></i> หมายเหตุ</label>
+          <input type="text" id="fNotes" placeholder="หมายเหตุเพิ่มเติม (ถ้ามี)" class="form-input">
+        </div>
+        <div class="modal-footer" style="padding: 12px 0 0 0; background: transparent; border: none;">
+          <button type="submit" id="fSubmitBtn" class="btn-submit">
+            <i class="fa-solid fa-floppy-disk"></i> บันทึกข้อมูล
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Custom Confirm -->
+  <div id="confirmModal" class="modal">
+    <div class="modal-content confirm-card">
+      <div class="confirm-body">
+        <div class="confirm-icon-wrapper" id="confirmIconWrapper">
+          <i class="fa-solid fa-circle-check" id="confirmIcon"></i>
+        </div>
+        <h3 id="confirmTitle" class="confirm-title">ยืนยันการทำรายการ</h3>
+        <div id="confirmMessage" class="confirm-message">ข้อความยืนยัน</div>
+      </div>
+      <div class="confirm-footer">
+        <button type="button" class="btn-confirm-cancel" onclick="closeConfirmModal()">ยกเลิก</button>
+        <button type="button" class="btn-confirm-ok" id="btnConfirmOk">
+          <i class="fa-solid fa-check"></i> ยืนยันดำเนินการ
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="app.js"></script>
+</body>
+</html>
