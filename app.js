@@ -1738,3 +1738,171 @@ window.onclick = function(event) {
     if (event.target === modal) closeModal(id);
   });
 };
+
+// =========================================================
+// 📍 ระบบตรวจจับพิกัด GPS และโฟกัสสวนสาธารณะใกล้เคียง
+// =========================================================
+var AUTO_DETECT_RADIUS_KM = 2.0; // รัศมีตรวจจับรอบตัว 2 กิโลเมตร
+var hasAutoDetectedPark = false;
+var userLocationMarker = null;
+
+/**
+ * 📐 คำนวณระยะห่างระหว่าง 2 พิกัด (Haversine Formula) เป็นกิโลเมตร
+ */
+function calculateDistanceKm(lat1, lon1, lat2, lon2) {
+  var R = 6371; // รัศมีโลก (km)
+  var dLat = (lat2 - lat1) * Math.PI / 180;
+  var dLon = (lon2 - lon1) * Math.PI / 180;
+  var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+          Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+          Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+/**
+ * 📍 ค้นหาสวนสาธารณะที่ใกล้ที่สุดจากพิกัด GPS ของผู้ใช้งาน
+ */
+function autoDetectNearestPark(userLat, userLng) {
+  var combinedData = allDamageData.concat(rawResolvedData || []);
+  if (!combinedData || combinedData.length === 0) return null;
+
+  var parkCoords = {};
+  combinedData.forEach(function(item) {
+    if (item.parkName && item.parkName !== '-' && item.lat && item.lng) {
+      if (!parkCoords[item.parkName]) {
+        parkCoords[item.parkName] = { lats: [], lngs: [], dept: item.department };
+      }
+      parkCoords[item.parkName].lats.push(item.lat);
+      parkCoords[item.parkName].lngs.push(item.lng);
+    }
+  });
+
+  var nearestPark = null;
+  var minDistance = Infinity;
+
+  Object.keys(parkCoords).forEach(function(pName) {
+    var obj = parkCoords[pName];
+    var avgLat = obj.lats.reduce((a, b) => a + b, 0) / obj.lats.length;
+    var avgLng = obj.lngs.reduce((a, b) => a + b, 0) / obj.lngs.length;
+
+    var dist = calculateDistanceKm(userLat, userLng, avgLat, avgLng);
+    if (dist < minDistance) {
+      minDistance = dist;
+      nearestPark = {
+        name: pName,
+        dept: obj.dept,
+        distance: dist,
+        lat: avgLat,
+        lng: avgLng
+      };
+    }
+  });
+
+  // หากอยู่ในรัศมีที่กำหนด
+  if (nearestPark && nearestPark.distance <= AUTO_DETECT_RADIUS_KM) {
+    return nearestPark;
+  }
+  return null;
+}
+
+/**
+ * 📍 ฟังก์ชันกดค้นหาพิกัดด้วยตนเอง (Manual Trigger)
+ */
+function manualTriggerUserLocation() {
+  var locateBtn = document.querySelector('.btn-map-locate');
+  if (locateBtn) locateBtn.classList.add('is-locating');
+  
+  showToast('กำลังค้นหาพิกัด GPS ของคุณ...', 'info');
+  runLocationProcess(true);
+}
+
+/**
+ * 🚀 ตรวจสอบ GPS อัตโนมัติเมื่อโหลดข้อมูลครั้งแรก
+ */
+function runAutoLocationCheck() {
+  if (hasAutoDetectedPark) return;
+  runLocationProcess(false);
+}
+
+function runLocationProcess(isManual) {
+  var locateBtn = document.querySelector('.btn-map-locate');
+
+  if (!navigator.geolocation) {
+    if (locateBtn) locateBtn.classList.remove('is-locating');
+    if (isManual) showToast('เบราว์เซอร์ไม่รองรับระบบระบุพิกัด GPS', 'error');
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    function(pos) {
+      if (locateBtn) locateBtn.classList.remove('is-locating');
+      hasAutoDetectedPark = true;
+      var uLat = pos.coords.latitude;
+      var uLng = pos.coords.longitude;
+
+      // วาดจุดสีฟ้าแสดงตำแหน่งปัจจุบันของผู้ใช้
+      if (userLocationMarker) map.removeLayer(userLocationMarker);
+      userLocationMarker = L.circleMarker([uLat, uLng], {
+        radius: 8,
+        fillColor: '#0284c7',
+        color: '#ffffff',
+        weight: 2.5,
+        opacity: 1,
+        fillOpacity: 0.9
+      }).addTo(map).bindTooltip('📍 คุณอยู่ที่นี่', { permanent: false, direction: 'top' });
+
+      var nearest = autoDetectNearestPark(uLat, uLng);
+      if (nearest) {
+        var deptFilter = document.getElementById('departmentFilter');
+        var parkFilter = document.getElementById('parkFilter');
+
+        // ปรับตัวกรองฝ่ายและสวนให้ตรงกับตำแหน่ง
+        if (!currentUser.loggedIn || currentUser.role === 'admin' || currentUser.dept === nearest.dept) {
+          if (deptFilter && (!currentUser.loggedIn || currentUser.role === 'admin')) {
+            deptFilter.value = nearest.dept;
+            updateParkDropdownOptions(nearest.dept);
+          }
+          if (parkFilter) parkFilter.value = nearest.name;
+          
+          filterMarkers();
+          if (map) map.setView([nearest.lat, nearest.lng], 16, { animate: true, duration: 0.8 });
+          showToast('📍 ตรวจพบตำแหน่งใกล้: ' + nearest.name + ' (' + (nearest.distance * 1000).toFixed(0) + ' ม.)', 'success');
+        }
+      } else if (isManual) {
+        if (map) map.setView([uLat, uLng], 15, { animate: true, duration: 0.6 });
+        showToast('📍 อยู่นอกรัศมีสวนสาธารณะในระบบ', 'info');
+      }
+    },
+    function(err) {
+      if (locateBtn) locateBtn.classList.remove('is-locating');
+      hasAutoDetectedPark = true;
+      if (isManual) {
+        showToast('⚠️ ไม่สามารถระบุพิกัดได้: ' + err.message, 'error');
+      }
+    },
+    { enableHighAccuracy: true, timeout: 7000, maximumAge: 60000 }
+  );
+}
+
+/**
+ * ⚡ อัปเดตฟังก์ชัน loadReports ให้เรียก runAutoLocationCheck()
+ */
+function loadReports() {
+  fetch(`${API_URL}?action=getInitialData&userCode=${encodeURIComponent(currentUser.code)}`)
+    .then(res => res.json())
+    .then(response => {
+      allDamageData = response.active || [];
+      rawResolvedData = response.resolved || [];
+
+      var currentDept = document.getElementById('departmentFilter') ? document.getElementById('departmentFilter').value : 'all';
+      updateParkDropdownOptions(currentDept);
+      filterMarkers();
+
+      // 🌟 สั่งตรวจจับตำแหน่ง GPS ทันทีที่ข้อมูลพร้อม
+      runAutoLocationCheck();
+    })
+    .catch(err => {
+      showToast('เกิดข้อผิดพลาดในการโหลดข้อมูล: ' + err.message, 'error');
+    });
+}
