@@ -1248,3 +1248,95 @@ svg.leaflet-zoom-animated,
   font-weight: 600;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
+
+/* =========================================================
+   📷 Image Upload Buttons & Preview Box Styles
+   ========================================================= */
+.image-upload-btn-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.btn-img-action {
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.btn-camera {
+  background: #f0fdf4;
+  color: #15803d;
+  border-color: #bbf7d0;
+}
+.btn-camera:hover {
+  background: #dcfce7;
+  border-color: #86efac;
+}
+
+.btn-gallery {
+  background: #f0f9ff;
+  color: #0369a1;
+  border-color: #bae6fd;
+}
+.btn-gallery:hover {
+  background: #e0f2fe;
+  border-color: #7dd3fc;
+}
+
+.image-preview-wrapper {
+  margin-top: 8px;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  color: #475569;
+  font-weight: 500;
+}
+
+.btn-remove-preview {
+  background: #fee2e2;
+  color: #dc2626;
+  border: 1px solid #fca5a5;
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s ease;
+}
+.btn-remove-preview:hover {
+  background: #fecaca;
+  color: #b91c1c;
+}
+
+.image-preview-box {
+  width: 100%;
+  max-height: 160px;
+  object-fit: contain;
+  border-radius: 6px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+}
