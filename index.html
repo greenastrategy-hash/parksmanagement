@@ -321,7 +321,7 @@
     </div>
   </div>
 
-  <!-- Modal: Resolve Action -->
+  <!-- Modal: Resolve Action (บันทึกการปรับปรุงเสร็จสิ้น) -->
   <div id="resolveConfirmModal" class="modal" style="display: none;">
     <div class="modal-content auth-card" style="max-width: 480px;">
       <div class="modal-header">
@@ -332,19 +332,40 @@
       </div>
       <div class="modal-body form-body" style="display: flex; flex-direction: column; gap: 12px;">
         <div id="resolveSummaryInfo" style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 10px; font-size: 0.85rem; color: #14532d;"></div>
+        
         <div class="form-group" style="text-align: left;">
           <label style="font-weight: 600; font-size: 0.85rem; color: #1e293b; display: block; margin-bottom: 4px;">
             📝 รายละเอียดการดำเนินการ / วิธีแก้ไข <span style="color: #dc2626;">*</span>
           </label>
-          <textarea id="resolveActionDetail" class="form-input" rows="3" placeholder="ระบุรายละเอียด เช่น เปลี่ยนอุปกรณ์ใหม่, ตัดแต่งกิ่งไม้..." required style="width: 100%;"></textarea>
+          <textarea id="resolveActionDetail" class="form-input" rows="3" placeholder="ระบุรายละเอียด เช่น เปลี่ยนอุปกรณ์ใหม่, ซ่อมแซมเรียบร้อยแล้ว..." required style="width: 100%;"></textarea>
         </div>
+
+        <!-- ส่วนแนบภาพหลังปรับปรุง (กล้อง & คลังภาพ พร้อมพรีวิว) -->
         <div class="form-group" style="text-align: left;">
           <label style="font-weight: 600; font-size: 0.85rem; color: #1e293b; display: block; margin-bottom: 4px;">
             📷 ภาพถ่ายหลังการปรับปรุง (ถ้ามี)
           </label>
-          <input type="file" id="resolveImageInput" accept="image/*" class="form-input file-input" onchange="previewResolveImage(event)">
-          <div id="resolveImagePreviewBox" style="display: none; margin-top: 8px; text-align: center;">
-            <img id="resolveImagePreview" src="" alt="ภาพหลังปรับปรุง" style="max-height: 140px; border-radius: 6px; border: 1px solid #cbd5e1; object-fit: contain;">
+          
+          <input type="file" id="resolveCameraInput" accept="image/*" capture="environment" style="display: none;" onchange="handleResolveImageSelected(event)">
+          <input type="file" id="resolveGalleryInput" accept="image/*" style="display: none;" onchange="handleResolveImageSelected(event)">
+
+          <div class="image-upload-btn-group">
+            <button type="button" class="btn-img-action btn-camera" onclick="document.getElementById('resolveCameraInput').click()">
+              <i class="fa-solid fa-camera"></i> ถ่ายภาพ
+            </button>
+            <button type="button" class="btn-img-action btn-gallery" onclick="document.getElementById('resolveGalleryInput').click()">
+              <i class="fa-solid fa-images"></i> เลือกจากคลังภาพ
+            </button>
+          </div>
+
+          <div id="resolveImagePreviewBox" class="image-preview-wrapper" style="display: none;">
+            <div class="preview-header">
+              <span><i class="fa-regular fa-image"></i> ตัวอย่างภาพหลังปรับปรุง:</span>
+              <button type="button" class="btn-remove-preview" onclick="clearResolveImagePreview()" title="ลบภาพนี้">
+                <i class="fa-solid fa-trash-can"></i> ลบภาพ
+              </button>
+            </div>
+            <img id="resolveImagePreview" src="" alt="ภาพหลังปรับปรุง" class="image-preview-box">
           </div>
         </div>
       </div>
@@ -376,7 +397,7 @@
     </div>
   </div>
 
-  <!-- Modal: Form Add/Edit -->
+  <!-- Modal: Form Add/Edit (บันทึก / แก้ไขรายการแจ้งชำรุด) -->
   <div id="reportFormModal" class="modal">
     <div class="modal-content form-card">
       <div class="modal-header">
@@ -386,6 +407,7 @@
       <form id="reportForm" onsubmit="handleFormSubmit(event)" class="modal-body form-body scrollable-body">
         <input type="hidden" id="fRowIndex">
         <input type="hidden" id="fExistingImageId">
+        
         <div class="form-grid">
           <div class="form-group">
             <label><i class="fa-solid fa-tag"></i> หมวดหมู่สถานที่ *</label>
@@ -410,6 +432,7 @@
             </select>
           </div>
         </div>
+
         <div class="form-grid">
           <div class="form-group">
             <label><i class="fa-solid fa-tree"></i> สวนสาธารณะ *</label>
@@ -420,10 +443,12 @@
             <input type="text" id="fArea" required placeholder="เช่น ประตู 3, ข้างศาลาแปดเหลี่ยม" class="form-input">
           </div>
         </div>
+
         <div class="form-group">
           <label><i class="fa-solid fa-triangle-exclamation"></i> สิ่งที่ชำรุด / ต้องการปรับปรุง *</label>
           <textarea id="fIssue" required rows="2" placeholder="ระบุรายละเอียดความเสียหาย" class="form-input"></textarea>
         </div>
+
         <div class="form-group">
           <label><i class="fa-solid fa-gauge-high"></i> ระดับความเร่งด่วน *</label>
           <select id="fUrgency" required class="form-input">
@@ -434,6 +459,7 @@
             <option value="1">⚪ ระดับ 1: ชำรุดตามอายุงาน (ไม่กระทบการใช้งาน)</option>
           </select>
         </div>
+
         <div class="form-grid">
           <div class="form-group">
             <label>ละติจูด (Lat) *</label>
@@ -444,6 +470,7 @@
             <input type="number" step="any" id="fLng" required placeholder="100.xxxx" class="form-input">
           </div>
         </div>
+
         <div class="gps-btn-group">
           <button type="button" class="btn-gps" onclick="getCurrentGPSLocation()">
             <i class="fa-solid fa-location-crosshairs"></i> ดึง GPS
@@ -455,15 +482,40 @@
             <i class="fa-solid fa-crosshairs"></i> 🎯 กึ่งกลางแผนที่
           </button>
         </div>
+
+        <!-- ส่วนแนบภาพ: ถ่ายภาพ / เลือกไฟล์ พร้อมพรีวิว -->
         <div class="form-group">
           <label><i class="fa-solid fa-camera"></i> ภาพถ่ายความเสียหาย</label>
-          <input type="file" id="fImageFile" accept="image/*" class="form-input file-input">
-          <small class="form-hint">หากไม่เลือกไฟล์ใหม่ ระบบจะใช้ภาพเดิมที่มีอยู่</small>
+          
+          <input type="file" id="fImageFileCamera" accept="image/*" capture="environment" style="display: none;" onchange="handleFormImageSelected(event)">
+          <input type="file" id="fImageFileGallery" accept="image/*" style="display: none;" onchange="handleFormImageSelected(event)">
+          
+          <div class="image-upload-btn-group">
+            <button type="button" class="btn-img-action btn-camera" onclick="document.getElementById('fImageFileCamera').click()">
+              <i class="fa-solid fa-camera"></i> ถ่ายภาพ
+            </button>
+            <button type="button" class="btn-img-action btn-gallery" onclick="document.getElementById('fImageFileGallery').click()">
+              <i class="fa-solid fa-images"></i> เลือกจากคลังภาพ
+            </button>
+          </div>
+
+          <div id="formImagePreviewContainer" class="image-preview-wrapper" style="display: none;">
+            <div class="preview-header">
+              <span id="formImagePreviewLabel"><i class="fa-regular fa-image"></i> ตัวอย่างภาพถ่าย:</span>
+              <button type="button" class="btn-remove-preview" onclick="clearFormImagePreview()" title="ลบภาพนี้">
+                <i class="fa-solid fa-trash-can"></i> ลบภาพ
+              </button>
+            </div>
+            <img id="formImagePreview" src="" alt="พรีวิวภาพความเสียหาย" class="image-preview-box">
+          </div>
+          <small class="form-hint" id="formImageHint">หากไม่เลือกภาพใหม่ ระบบจะคงภาพเดิมที่มีอยู่</small>
         </div>
+
         <div class="form-group">
           <label><i class="fa-solid fa-comment-dots"></i> หมายเหตุ</label>
           <input type="text" id="fNotes" placeholder="หมายเหตุเพิ่มเติม (ถ้ามี)" class="form-input">
         </div>
+
         <div class="modal-footer" style="padding: 12px 0 0 0; background: transparent; border: none;">
           <button type="submit" id="fSubmitBtn" class="btn-submit">
             <i class="fa-solid fa-floppy-disk"></i> บันทึกข้อมูล
