@@ -173,6 +173,14 @@ document.addEventListener('DOMContentLoaded', function() {
   updateStatsBadgeColors();
   loadReports();
 
+  // 🌟 บังคับให้ Leaflet คำนวณขนาดหน้าจอใหม่อีกครั้งหลังจาก DOM และ CSS เรนเดอร์เสร็จ
+  setTimeout(function() {
+    if (map) {
+      map.invalidateSize();
+      resetMapToDefaultView();
+    }
+  }, 300);
+
   var btnConfirmOk = document.getElementById('btnConfirmOk');
   if (btnConfirmOk) {
     btnConfirmOk.addEventListener('click', function() {
@@ -1068,22 +1076,29 @@ function useMapCenterCoordinate() {
   showToast('ใช้พิกัดจุดกึ่งกลางหน้าจอเรียบร้อยแล้ว!', 'success');
 }
 
+/**
+ * 🌟 รีเซ็ตมุมมองแผนที่กลับสู่ศูนย์กลาง กทม.
+ */
 function resetMapToDefaultView() {
   if (!map) return;
+  
+  // บังคับคำนวณพื้นที่แผนที่ใหม่ก่อนย้ายมุมมอง
   map.invalidateSize();
 
-  if (bmaDistrictsLayer) {
+  if (bmaDistrictsLayer && bmaDistrictsLayer.getLayers().length > 0) {
     map.fitBounds(bmaDistrictsLayer.getBounds(), {
-      paddingTopLeft: [10, 10],
-      paddingBottomRight: [10, 10],
-      maxZoom: 12.5,
+      padding: [15, 15],
+      maxZoom: 12,
       animate: true,
       duration: 0.5
     });
   } else {
-    map.setView([13.7563, 100.52], 11.5, { animate: true, duration: 0.5 });
+    // พิกัดศูนย์กลาง กทม. (อนุสาวรีย์ประชาธิปไตย/เสาชิงช้า)
+    map.setView([13.7563, 100.5018], 11.5, { 
+      animate: true, 
+      duration: 0.5 
+    });
   }
-  showToast('รีเซ็ตมุมมองแผนที่', 'info');
 }
 
 function handleBMAMaskOverlay(show) {
@@ -1174,6 +1189,18 @@ function drawBMAData(data) {
     fillOpacity: 0.40,
     interactive: false
   }).addTo(map);
+
+  // 🌟 บังคับคำนวณขนาดและจัดแผนที่เขต กทม. ให้อยู่กึ่งกลางหน้าจอทันที
+  setTimeout(function() {
+    if (map && bmaDistrictsLayer && bmaDistrictsLayer.getLayers().length > 0) {
+      map.invalidateSize();
+      map.fitBounds(bmaDistrictsLayer.getBounds(), {
+        padding: [20, 20],
+        maxZoom: 12,
+        animate: false
+      });
+    }
+  }, 200);
 }
 
 function openAuthModal() {
