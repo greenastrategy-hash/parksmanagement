@@ -1594,6 +1594,9 @@ function handleFormSubmit(e) {
 var pendingResolveItem = null;
 var pendingResolveBase64 = null;
 
+/**
+ * 🌟 เมื่อกดปุ่ม "ปรับปรุงเสร็จสิ้น" ในหน้าต่างรายละเอียด
+ */
 function onResolveButtonClick() {
   if (!currentActiveGroup || !currentActiveGroup.items.length) return;
   var item = currentActiveGroup.items[currentActiveIndex];
@@ -1601,15 +1604,29 @@ function onResolveButtonClick() {
   pendingResolveItem = item;
   pendingResolveBase64 = null;
 
-  document.getElementById('resolveSummaryInfo').innerHTML = 
-    '<strong>' + escapeHTML(item.parkName) + '</strong> (' + escapeHTML(item.category) + ')<br/>' +
-    'จุดเกิดเหตุ: ' + escapeHTML(item.area) + '<br/>' +
-    'ปัญหา: ' + escapeHTML(item.issue);
+  var summaryElem = document.getElementById('resolveSummaryInfo');
+  if (summaryElem) {
+    summaryElem.innerHTML = 
+      '<strong>' + escapeHTML(item.parkName) + '</strong> (' + escapeHTML(item.category) + ')<br/>' +
+      'จุดเกิดเหตุ: ' + escapeHTML(item.area) + '<br/>' +
+      'ปัญหา: ' + escapeHTML(item.issue);
+  }
 
-  document.getElementById('resolveActionDetail').value = '';
-  document.getElementById('resolveImageInput').value = '';
-  document.getElementById('resolveImagePreviewBox').style.display = 'none';
-  document.getElementById('resolveImagePreview').src = '';
+  // รีเซ็ตข้อความรายละเอียด
+  var actionInput = document.getElementById('resolveActionDetail');
+  if (actionInput) actionInput.value = '';
+
+  // รีเซ็ตค่า Input ไฟล์ทั้งสองตัว
+  var camInput = document.getElementById('resolveCameraInput');
+  if (camInput) camInput.value = '';
+  var galInput = document.getElementById('resolveGalleryInput');
+  if (galInput) galInput.value = '';
+
+  // ซ่อนกล่องพรีวิว
+  var previewBox = document.getElementById('resolveImagePreviewBox');
+  if (previewBox) previewBox.style.display = 'none';
+  var previewImg = document.getElementById('resolveImagePreview');
+  if (previewImg) previewImg.src = '';
 
   document.getElementById('resolveConfirmModal').style.display = 'flex';
 }
@@ -1645,19 +1662,26 @@ function previewResolveImage(event) {
   reader.readAsDataURL(file);
 }
 
+/**
+ * 🚀 ส่งข้อมูลบันทึกการปรับปรุงเสร็จสิ้นไปยัง Apps Script API
+ */
 function submitResolveAction() {
   if (!pendingResolveItem) return;
 
-  var actionDetail = document.getElementById('resolveActionDetail').value.trim();
+  var actionDetailInput = document.getElementById('resolveActionDetail');
+  var actionDetail = actionDetailInput ? actionDetailInput.value.trim() : '';
+  
   if (!actionDetail) {
     showToast('⚠️ กรุณาระบุรายละเอียดการดำเนินการแก้ไข', 'error');
-    document.getElementById('resolveActionDetail').focus();
+    if (actionDetailInput) actionDetailInput.focus();
     return;
   }
 
   var btnSubmit = document.getElementById('btnSubmitResolve');
-  btnSubmit.disabled = true;
-  btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> กำลังบันทึก...';
+  if (btnSubmit) {
+    btnSubmit.disabled = true;
+    btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> กำลังบันทึก...';
+  }
 
   var payload = {
     rowIndex: pendingResolveItem.rowIndex,
@@ -1685,21 +1709,25 @@ function submitResolveAction() {
   })
     .then(res => res.json())
     .then(res => {
-      btnSubmit.disabled = false;
-      btnSubmit.innerHTML = '<i class="fa-solid fa-check"></i> บันทึกเสร็จสิ้น';
+      if (btnSubmit) {
+        btnSubmit.disabled = false;
+        btnSubmit.innerHTML = '<i class="fa-solid fa-check"></i> บันทึกเสร็จสิ้น';
+      }
 
       if (res.success) {
         showToast(res.message, 'success');
         closeResolveConfirmModal();
-        closeModal('detailModal');
-        loadReports();
+        closeModal('detailModal'); // แก้ไขเป็นชื่อฟังก์ชันที่ถูกต้อง
+        loadReports(); // ดึงข้อมูลใหม่
       } else {
         showToast(res.message, 'error');
       }
     })
     .catch(err => {
-      btnSubmit.disabled = false;
-      btnSubmit.innerHTML = '<i class="fa-solid fa-check"></i> บันทึกเสร็จสิ้น';
+      if (btnSubmit) {
+        btnSubmit.disabled = false;
+        btnSubmit.innerHTML = '<i class="fa-solid fa-check"></i> บันทึกเสร็จสิ้น';
+      }
       showToast('เกิดข้อผิดพลาด: ' + err.message, 'error');
     });
 }
