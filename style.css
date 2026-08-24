@@ -1428,3 +1428,97 @@ svg.leaflet-zoom-animated,
   70% { transform: scale(1.08); box-shadow: 0 0 0 8px rgba(234, 88, 12, 0); }
   100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(234, 88, 12, 0); }
 }
+
+/* =========================================================
+   🖼️ Before & After Images / Resolved Details Display
+   ========================================================= */
+.resolved-status-banner {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #047857;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.modal-images-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.modal-images-grid.is-compare {
+  grid-template-columns: 1fr 1fr;
+}
+
+.image-box-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.image-box-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 5;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 12px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.badge-before {
+  background: rgba(185, 28, 28, 0.88);
+  color: #ffffff;
+}
+
+.badge-after {
+  background: rgba(4, 120, 87, 0.9);
+  color: #ffffff;
+}
+
+.resolved-action-block {
+  background: #f0fdf4 !important;
+  border: 1px solid #bbf7d0 !important;
+}
+
+.block-title.text-emerald {
+  color: #047857 !important;
+}
+
+.text-emerald {
+  color: #047857 !important;
+}
+
+.font-semibold {
+  font-weight: 600;
+}
+
+.block-row-inline {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 0.78rem;
+  color: #475569;
+  border-top: 1px dashed #bbf7d0;
+  padding-top: 6px;
+}
+
+.mt-2 {
+  margin-top: 6px;
+}
+
+@media (max-width: 600px) {
+  .modal-images-grid.is-compare {
+    grid-template-columns: 1fr;
+  }
+}
