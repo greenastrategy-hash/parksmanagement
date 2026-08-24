@@ -225,8 +225,8 @@ function initMap() {
     maxZoom: 19
   });
 
-  // 2. 🛰️ ชั้นภาพถ่ายดาวเทียมคมชัด (Google Hybrid / Satellite Imagery)
-  var satelliteLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+  // 2. 🛰️ ชั้นภาพถ่ายดาวเทียมแบบคลีน สบายตา (ไม่มีป้ายสถานที่/ธุรกิจ/POI มารบกวน)
+  var cleanSatelliteLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
     attribution: '&copy; Google Maps',
     maxZoom: 20,
     subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
@@ -248,7 +248,7 @@ function initMap() {
   // 🌟 กล่องสลับชั้นแผนที่ (Layer Switcher) ที่มุมขวาบน
   var baseMaps = {
     "🗺️ แผนที่ถนน": streetLayer,
-    "🛰️ ภาพถ่ายดาวเทียม": satelliteLayer
+    "🛰️ ภาพถ่ายดาวเทียม (คลีน)": cleanSatelliteLayer
   };
   L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map);
 
