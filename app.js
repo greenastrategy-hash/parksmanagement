@@ -218,19 +218,29 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function initMap() {
-  // 1. ชั้นแผนที่ถนนมาตรฐาน (Street / Voyager)
+  // 1. 🗺️ ชั้นแผนที่ถนนมาตรฐาน (Street / Voyager)
   var streetLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
     attribution: '&copy; OpenStreetMap &copy; CARTO',
     subdomains: 'abcd',
     maxZoom: 19
   });
 
-  // 2. 🛰️ ชั้นภาพถ่ายดาวเทียมแบบคลีน สบายตา (ไม่มีป้ายสถานที่/ธุรกิจ/POI มารบกวน)
-  var cleanSatelliteLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+  // 2. 🛰️ ชั้นภาพถ่ายดาวเทียมคมชัด (Google Satellite Base)
+  var satelliteBase = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
     attribution: '&copy; Google Maps',
     maxZoom: 20,
     subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
   });
+
+  // 3. 🏷️ ชั้นแสดงเฉพาะชื่อสถานที่สำคัญ เส้นทาง และจุดสังเกตหลัก (Clean Reference Labels)
+  var placeLabels = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png', {
+    subdomains: 'abcd',
+    maxZoom: 19,
+    pane: 'shadowPane' // วางข้อความไว้เหนือชั้นดาวเทียม เพื่อความคมชัด อ่านง่าย
+  });
+
+  // รวมเป็น 1 ชั้นดาวเทียมพร้อมชื่อสถานที่สำคัญ
+  var satelliteWithLabelsGroup = L.layerGroup([satelliteBase, placeLabels]);
 
   map = L.map('map', {
     center: [13.7563, 100.5018],
@@ -248,7 +258,7 @@ function initMap() {
   // 🌟 กล่องสลับชั้นแผนที่ (Layer Switcher) ที่มุมขวาบน
   var baseMaps = {
     "🗺️ แผนที่ถนน": streetLayer,
-    "🛰️ ภาพถ่ายดาวเทียม (คลีน)": cleanSatelliteLayer
+    "🛰️ ภาพถ่ายดาวเทียม + สถานที่สำคัญ": satelliteWithLabelsGroup
   };
   L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map);
 
