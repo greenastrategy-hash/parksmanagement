@@ -382,8 +382,8 @@ function displayTableRows(dataList) {
   var isResolvedTab = (currentTableTab === 'resolved');
   badge.innerText = dataList.length + ' รายการ';
   summary.innerText = isResolvedTab 
-    ? 'แสดงประวัติปรับปรุงเสร็จสิ้น ' + dataList.length + ' รายการตามเงื่อนไข'
-    : 'แสดงรายการรอปรับปรุง ' + dataList.length + ' รายการตามเงื่อนไข (เรียงตามระดับความเร่งด่วน 5 ➔ 1)';
+    ? 'แสดงประวัติปรับปรุงเสร็จสิ้น ' + dataList.length + ' รายการ'
+    : 'แสดงรายการรอปรับปรุง ' + dataList.length + ' รายการ (เรียงตามระดับความเร่งด่วน 5 ➔ 1)';
 
   if (isResolvedTab) {
     thead.innerHTML = '<tr>' +
@@ -392,12 +392,12 @@ function displayTableRows(dataList) {
                         '<th style="width: 140px;">สวนสาธารณะ</th>' +
                         '<th style="width: 110px;">บริเวณ</th>' +
                         '<th style="width: 100px;">หมวดหมู่</th>' +
-                        '<th style="min-width: 160px;">สิ่งที่ปรับปรุงเสร็จสิ้น</th>' +
-                        '<th style="width: 110px; text-align: center;">ความเร่งด่วน</th>' +
-                        '<th style="width: 65px; text-align: center;">รูปภาพ</th>' +
-                        '<th style="width: 130px;">วันที่เสร็จสิ้น</th>' +
+                        '<th style="min-width: 150px;">สิ่งที่ปรับปรุง</th>' +
+                        '<th style="min-width: 160px;">วิธีการแก้ไข</th>' +
+                        '<th style="width: 65px; text-align: center;">ก่อน/หลัง</th>' +
+                        '<th style="width: 120px;">วันที่เสร็จสิ้น</th>' +
                         '<th style="width: 100px;">ผู้ดำเนินการ</th>' +
-                        '<th style="width: 110px;">หมายเหตุ</th>' +
+                        '<th style="width: 70px; text-align: center;">ดูข้อมูล</th>' +
                       '</tr>';
   } else {
     thead.innerHTML = '<tr>' +
@@ -415,7 +415,7 @@ function displayTableRows(dataList) {
   }
 
   if (dataList.length === 0) {
-    var colSpan = isResolvedTab ? 11 : 10;
+    var colSpan = 11;
     tbody.innerHTML = '<tr><td colspan="' + colSpan + '" class="text-center py-4 text-muted"><i class="fa-regular fa-circle-check"></i> ไม่พบข้อมูลในแท็บนี้ตามเงื่อนไขตัวกรอง</td></tr>';
     return;
   }
@@ -441,11 +441,15 @@ function displayTableRows(dataList) {
                 '<td>' + escapeHTML(item.area || '-') + '</td>' +
                 '<td><span class="filter-tag">' + escapeHTML(item.category || '-') + '</span></td>' +
                 '<td><span style="color:#047857; font-weight:500;">✓ ' + escapeHTML(item.issue || '-') + '</span></td>' +
-                '<td style="text-align:center;">' + urgencyBadgeHtml + '</td>' +
+                '<td><small style="color:#15803d; font-weight:500;">' + escapeHTML(item.actionDetail || '-') + '</small></td>' +
                 '<td style="text-align:center;">' + imgHtml + '</td>' +
                 '<td><small style="color:#475569; font-weight:500;">' + escapeHTML(item.completedDate || '-') + '</small></td>' +
                 '<td><span class="filter-tag active-tag">' + escapeHTML(item.operator || '-') + '</span></td>' +
-                '<td><small style="color:#64748b;">' + escapeHTML(item.notes !== '-' ? item.notes : '') + '</small></td>' +
+                '<td style="text-align:center;">' +
+                  '<button type="button" class="btn-table-view" onclick="viewDetailFromTable(' + i + ')">' +
+                    '<i class="fa-solid fa-eye"></i> ดู' +
+                  '</button>' +
+                '</td>' +
               '</tr>';
     } else {
       html += '<tr>' +
@@ -845,6 +849,7 @@ function displayCurrentReportItem() {
 
   var total = currentActiveGroup.items.length;
   var item = currentActiveGroup.items[currentActiveIndex];
+  var isResolved = !!item.isResolved;
 
   document.getElementById('mDepartment').innerText = item.department;
   document.getElementById('mParkName').innerText = item.parkName;
@@ -880,6 +885,45 @@ function displayCurrentReportItem() {
     notesRow.style.display = 'none';
   }
 
+  // 🌟 จัดการแถบสถานะและกล่องวิธีแก้ไข
+  var banner = document.getElementById('resolvedStatusBanner');
+  var actionBlock = document.getElementById('mResolvedActionBlock');
+  var imagesWrapper = document.getElementById('modalImagesWrapper');
+  var boxAfter = document.getElementById('boxAfterImage');
+
+  if (isResolved) {
+    if (banner) banner.style.display = 'flex';
+    if (actionBlock) {
+      actionBlock.style.display = 'flex';
+      document.getElementById('mResolvedActionDetail').innerText = item.actionDetail || 'ปรับปรุงแก้ไขเรียบร้อยแล้ว';
+      document.getElementById('mResolvedOperator').innerText = item.operator || '-';
+      document.getElementById('mResolvedDate').innerText = item.completedDate || '-';
+    }
+
+    // แสดงภาพหลังทำ (ถ้ามี)
+    if (boxAfter) {
+      boxAfter.style.display = 'flex';
+      var imgAfter = document.getElementById('modalAfterImage');
+      var fallbackAfter = document.getElementById('noAfterImageFallback');
+      if (item.afterImageUrl && item.afterImageId) {
+        imgAfter.setAttribute('data-image-id', item.afterImageId);
+        imgAfter.src = item.afterImageUrl;
+        imgAfter.style.display = 'block';
+        if (fallbackAfter) fallbackAfter.style.display = 'none';
+      } else {
+        imgAfter.style.display = 'none';
+        if (fallbackAfter) fallbackAfter.style.display = 'flex';
+      }
+    }
+    if (imagesWrapper) imagesWrapper.classList.add('is-compare');
+  } else {
+    if (banner) banner.style.display = 'none';
+    if (actionBlock) actionBlock.style.display = 'none';
+    if (boxAfter) boxAfter.style.display = 'none';
+    if (imagesWrapper) imagesWrapper.classList.remove('is-compare');
+  }
+
+  // ภาพก่อนทำ
   var imgElem = document.getElementById('modalImage');
   var fallback = document.getElementById('noImageFallback');
 
@@ -887,15 +931,16 @@ function displayCurrentReportItem() {
     imgElem.setAttribute('data-image-id', item.imageId);
     imgElem.src = item.imageUrl;
     imgElem.style.display = 'block';
-    fallback.style.display = 'none';
+    if (fallback) fallback.style.display = 'none';
   } else {
     imgElem.src = 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\'/%3E';
     imgElem.style.display = 'none';
-    fallback.style.display = 'flex';
+    if (fallback) fallback.style.display = 'flex';
   }
 
+  // ปุ่มดำเนินการ (แสดงเฉพาะรายการที่ยังไม่ปิดงาน)
   var actionsContainer = document.getElementById('adminActionsContainer');
-  if (currentUser.loggedIn && (currentUser.role === 'admin' || currentUser.dept === item.department)) {
+  if (!isResolved && currentUser.loggedIn && (currentUser.role === 'admin' || currentUser.dept === item.department)) {
     actionsContainer.style.display = 'grid';
   } else {
     actionsContainer.style.display = 'none';
