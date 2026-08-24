@@ -747,26 +747,29 @@ function renderTopParksList(parkCounts) {
   container.innerHTML = html;
 }
 
+/**
+ * 🌟 ปรับปรุงการสร้างหมุด: 
+ * - สีตัวหมุดเปลี่ยนตามระดับความเสี่ยง (Urgency Theme Palette)
+ * - นำป้ายตัวเลขระดับความเสี่ยงที่มุมซ้ายบนออก
+ * - แสดงเฉพาะไอคอนหมวดหมู่สีขาว และป้ายจำนวนรายการ (+N)
+ */
 function createMarkerIcon(maxUrgency, itemCount, category) {
-  var catColor = getCategoryColor(category);
-  var iconClass = categoryIcons[category] || defaultCategoryIcon;
   var urgColor = getUrgencyColor(maxUrgency);
+  var iconClass = categoryIcons[category] || defaultCategoryIcon;
   
+  // 🟣 ป้ายจำนวนรายการซ้อนทับ (มุมขวาบน) แสดงเมื่อมีมากกว่า 1 รายการ
   var countBadgeHtml = itemCount > 1 
     ? '<span class="pin-count-badge" style="background-color: #c4b5fd; color: #4c1d95; border: 1.5px solid #ffffff;">+' + itemCount + '</span>' 
     : '';
 
-  var urgencyBadgeHtml = '<span class="pin-urgency-badge" style="background-color: ' + urgColor.bg + '; color: ' + urgColor.text + ';">' + maxUrgency + '</span>';
-
   return L.divIcon({
     className: 'custom-pin-wrapper',
     html: '<div class="custom-pin-container">' +
-            '<div class="custom-pin" style="background-color: ' + catColor.bg + '; border: 2px solid #ffffff;">' +
-              '<span class="custom-pin-inner" style="color: ' + catColor.text + ';">' +
+            '<div class="custom-pin" style="background-color: ' + urgColor.bg + '; border: 2px solid #ffffff;">' +
+              '<span class="custom-pin-inner" style="color: #ffffff;">' +
                 '<i class="' + iconClass + '"></i>' +
               '</span>' +
             '</div>' +
-            urgencyBadgeHtml +
             countBadgeHtml +
           '</div>',
     iconSize: [36, 36],
@@ -784,7 +787,6 @@ function renderGroupedMarkers(data) {
   groupedLocationData.sort((a, b) => a.maxUrgency - b.maxUrgency);
 
   groupedLocationData.forEach(function(group) {
-    var pinBgColor = getCategoryColor(group.topCategory);
     var urgColor = getUrgencyColor(group.maxUrgency);
     
     var marker = L.marker([group.lat, group.lng], {
@@ -798,7 +800,7 @@ function renderGroupedMarkers(data) {
     var parkNames = Object.keys(parkNamesSet).join(', ');
 
     var tooltipContent = '<b>' + escapeHTML(parkNames) + '</b><br/>' +
-                         'หมวดหมู่: <span style="font-weight:600; color:' + pinBgColor.text + ';">' + escapeHTML(group.topCategory || '-') + '</span><br/>' +
+                         'หมวดหมู่: <span style="font-weight:600; color:#047857;">' + escapeHTML(group.topCategory || '-') + '</span><br/>' +
                          'จำนวนชำรุดทั้งหมด: <b>' + group.items.length + ' รายการ</b><br/>' +
                          'ระดับความเสี่ยง: <span style="color:' + urgColor.bg + '; font-weight:bold;">' + escapeHTML(urgencyLabels[group.maxUrgency] || ('ระดับ ' + group.maxUrgency)) + '</span><br/>' +
                          '<small style="color:#64748b;">(' + escapeHTML(urgencyDescriptions[group.maxUrgency] || '') + ')</small>';
