@@ -222,31 +222,30 @@ function initMap() {
   var streetLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
     attribution: '&copy; OpenStreetMap &copy; CARTO',
     subdomains: 'abcd',
-    maxZoom: 19
+    maxZoom: 20
   });
 
-  // 2. 🛰️ ชั้นภาพถ่ายดาวเทียมคมชัด (Google Satellite Base)
-  var satelliteBase = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
-    attribution: '&copy; Google Maps',
-    maxZoom: 20,
-    subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+  // 2. 🛰️ ชั้นภาพถ่ายดาวเทียมมาตรฐานสากลคมชัด (Esri World Imagery)
+  var satelliteBase = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    attribution: '&copy; Esri, Maxar, Earthstar Geographics',
+    maxNativeZoom: 18,
+    maxZoom: 20
   });
 
-  // 3. 🏷️ ชั้นแสดงเฉพาะชื่อสถานที่สำคัญ เส้นทาง และจุดสังเกตหลัก (Clean Reference Labels)
+  // 3. 🏷️ ชั้นป้ายกำกับชื่อสถานที่สำคัญและเส้นทาง (CartoDB Labels)
   var placeLabels = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png', {
     subdomains: 'abcd',
-    maxZoom: 19,
-    pane: 'shadowPane' // วางข้อความไว้เหนือชั้นดาวเทียม เพื่อความคมชัด อ่านง่าย
+    maxZoom: 20
   });
 
   // รวมเป็น 1 ชั้นดาวเทียมพร้อมชื่อสถานที่สำคัญ
-  var satelliteWithLabelsGroup = L.layerGroup([satelliteBase, placeLabels]);
+  var satelliteGroup = L.layerGroup([satelliteBase, placeLabels]);
 
   map = L.map('map', {
     center: [13.7563, 100.5018],
     zoom: 11.5,
     minZoom: 9.5,
-    maxZoom: 19,
+    maxZoom: 20,
     zoomSnap: 0.1,
     zoomDelta: 0.5,
     zoomControl: false,
@@ -258,7 +257,7 @@ function initMap() {
   // 🌟 กล่องสลับชั้นแผนที่ (Layer Switcher) ที่มุมขวาบน
   var baseMaps = {
     "🗺️ แผนที่ถนน": streetLayer,
-    "🛰️ ภาพถ่ายดาวเทียม + สถานที่สำคัญ": satelliteWithLabelsGroup
+    "🛰️ ภาพถ่ายดาวเทียม + สถานที่สำคัญ": satelliteGroup
   };
   L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map);
 
@@ -1210,10 +1209,10 @@ function drawBMAData(data) {
     filter: feature => !isTrashBox(feature),
     style: () => ({
       color: '#00744b',
-      weight: 0.9,
-      opacity: 0.38,
-      fillColor: '#ffffff',
-      fillOpacity: 0.02,
+      weight: 1.2,
+      opacity: 0.6,
+      fillColor: '#000000',
+      fillOpacity: 0.0, // ปิดการถมสีทึบในเขตพื้นที่
       className: 'bma-district-path'
     }),
     onEachFeature: function(feature, layer) {
@@ -1226,7 +1225,7 @@ function drawBMAData(data) {
           click: e => {
             if (isPickingLocationOnMap) completeMapPinPick(e.latlng.lat, e.latlng.lng);
           },
-          mouseover: e => e.target.setStyle({ weight: 1.8, opacity: 0.85, color: '#004d32', fillOpacity: 0.12 }),
+          mouseover: e => e.target.setStyle({ weight: 2.0, opacity: 0.9, color: '#004d32', fillOpacity: 0.08 }),
           mouseout: () => bmaDistrictsLayer.resetStyle(layer)
         });
       }
@@ -1246,21 +1245,17 @@ function drawBMAData(data) {
     }
   });
 
+  // ปรับหน้ากากนอกเขต กทม. ให้โปร่งบาง (fillOpacity: 0.25) เพื่อไม่ให้บดบังแผนที่
   bmaMaskLayer = L.polygon(maskRings, {
     stroke: false,
     fillColor: '#0f172a',
-    fillOpacity: 0.40,
+    fillOpacity: 0.25,
     interactive: false
   }).addTo(map);
 
   setTimeout(function() {
     if (map && bmaDistrictsLayer && bmaDistrictsLayer.getLayers().length > 0) {
       map.invalidateSize();
-      map.fitBounds(bmaDistrictsLayer.getBounds(), {
-        padding: [20, 20],
-        maxZoom: 12,
-        animate: false
-      });
     }
   }, 200);
 }
