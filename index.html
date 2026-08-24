@@ -125,7 +125,7 @@
     </div>
   </div>
 
- <!-- Map Container -->
+  <!-- Map Container -->
   <div class="map-wrapper">
     <div id="map"></div>
     
@@ -257,7 +257,7 @@
     </div>
   </div>
 
-  <!-- Modal: Detail -->
+  <!-- Modal: Detail (รองรับทั้งรายการรอปรับปรุง และรายการที่เสร็จสิ้นแล้ว) -->
   <div id="detailModal" class="modal">
     <div class="modal-content">
       <div class="modal-header">
@@ -268,17 +268,54 @@
         <button class="close-btn" onclick="closeModal('detailModal')">&times;</button>
       </div>
       <div class="modal-body scrollable-body">
-        <div class="image-container" id="modalImageContainer">
-          <img id="modalImage" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E" alt="ภาพชำรุดเสียหาย" onerror="handleImageError(this)">
-          <div id="noImageFallback" class="no-image" style="display:none;">
-            <i class="fa-regular fa-image"></i> ไม่มีรูปภาพแนบ
+        
+        <!-- แถบแสดงสถานะปรับปรุงเสร็จสิ้น -->
+        <div id="resolvedStatusBanner" class="resolved-status-banner" style="display: none;">
+          <i class="fa-solid fa-circle-check"></i> ดำเนินการปรับปรุงแก้ไขเสร็จสิ้นแล้ว
+        </div>
+
+        <!-- 🖼️ โซนรูปภาพ (รองรับทั้งภาพเดี่ยว และเปรียบเทียบ ก่อน-หลัง) -->
+        <div id="modalImagesWrapper" class="modal-images-grid">
+          <!-- ภาพก่อนทำ -->
+          <div class="image-box-item" id="boxBeforeImage">
+            <span class="image-box-badge badge-before">ก่อนปรับปรุง</span>
+            <div class="image-container" id="modalImageContainer">
+              <img id="modalImage" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E" alt="ภาพก่อนปรับปรุง" onerror="handleImageError(this)">
+              <div id="noImageFallback" class="no-image" style="display:none;">
+                <i class="fa-regular fa-image"></i> ไม่มีรูปภาพก่อนทำ
+              </div>
+            </div>
+          </div>
+
+          <!-- ภาพหลังทำ (แสดงเมื่อปรับปรุงเสร็จแล้ว) -->
+          <div class="image-box-item" id="boxAfterImage" style="display: none;">
+            <span class="image-box-badge badge-after">หลังปรับปรุง</span>
+            <div class="image-container" id="modalAfterImageContainer">
+              <img id="modalAfterImage" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E" alt="ภาพหลังปรับปรุง" onerror="handleImageError(this)">
+              <div id="noAfterImageFallback" class="no-image" style="display:none;">
+                <i class="fa-regular fa-image"></i> ไม่มีรูปภาพหลังทำ
+              </div>
+            </div>
           </div>
         </div>
+
         <div class="info-cards-container">
+          <!-- 🌟 กล่องแสดงวิธีแก้ไขและผลการปรับปรุง -->
+          <div class="info-card-block resolved-action-block" id="mResolvedActionBlock" style="display: none;">
+            <div class="block-title text-emerald"><i class="fa-solid fa-screwdriver-wrench"></i> วิธีการดำเนินการแก้ไข / รายละเอียดการซ่อมแซม</div>
+            <div class="block-content text-emerald font-semibold" id="mResolvedActionDetail">-</div>
+            <div class="block-row-inline mt-2">
+              <small><i class="fa-solid fa-user-check"></i> ผู้ดำเนินการ: <b id="mResolvedOperator">-</b></small>
+              <small><i class="fa-regular fa-calendar-check"></i> วันที่แล้วเสร็จ: <b id="mResolvedDate">-</b></small>
+            </div>
+          </div>
+
+          <!-- กล่องปัญหาที่พบ -->
           <div class="info-card-block highlight-block">
-            <div class="block-title"><i class="fa-solid fa-triangle-exclamation"></i> สิ่งที่ชำรุด / ต้องการปรับปรุง</div>
+            <div class="block-title"><i class="fa-solid fa-triangle-exclamation"></i> สิ่งที่ชำรุด / ปัญหาที่พบ</div>
             <div class="block-content highlight-text" id="mIssue">-</div>
           </div>
+
           <div class="info-card-block">
             <div class="block-row">
               <span class="row-label"><i class="fa-solid fa-tree"></i> สวนสาธารณะ:</span>
@@ -293,6 +330,7 @@
               <span class="row-value text-emerald" id="mDepartment">-</span>
             </div>
           </div>
+
           <div class="info-card-block">
             <div class="block-row">
               <span class="row-label"><i class="fa-solid fa-tag"></i> หมวดหมู่:</span>
@@ -303,11 +341,12 @@
               <span class="row-value" id="mUrgency">-</span>
             </div>
             <div class="block-row" id="mNotesRow">
-              <span class="row-label"><i class="fa-solid fa-comment-dots"></i> หมายเหตุ:</span>
+              <span class="row-label"><i class="fa-solid fa-comment-dots"></i> หมายเหตุเดิม:</span>
               <span class="row-value text-muted" id="mNotes">-</span>
             </div>
           </div>
         </div>
+
         <div id="adminActionsContainer" class="admin-actions-container" style="display: none;">
           <button class="btn-resolve-action" onclick="onResolveButtonClick()">
             <i class="fa-solid fa-circle-check"></i> ดำเนินการปรับปรุงเสร็จสิ้น
