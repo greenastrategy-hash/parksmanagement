@@ -1736,12 +1736,17 @@ function calculateDistanceKm(lat1, lon1, lat2, lon2) {
   return R * c;
 }
 
+/**
+ * 📍 ค้นหาสวนสาธารณะที่ใกล้ที่สุดจากพิกัด GPS ของผู้ใช้งาน
+ * ⚠️ เงื่อนไข: คำนวณเฉพาะจุดที่ "ยังคงสถานะชำรุดอยู่" (allDamageData) เท่านั้น
+ */
 function autoDetectNearestPark(userLat, userLng) {
-  var combinedData = allDamageData.concat(rawResolvedData || []);
-  if (!combinedData || combinedData.length === 0) return null;
+  // กรองเฉพาะรายการที่ยังชำรุดอยู่ และมีพิกัดถูกต้อง
+  var activeDamageData = allDamageData || [];
+  if (activeDamageData.length === 0) return null;
 
   var parkCoords = {};
-  combinedData.forEach(function(item) {
+  activeDamageData.forEach(function(item) {
     if (item.parkName && item.parkName !== '-' && item.lat && item.lng) {
       if (!parkCoords[item.parkName]) {
         parkCoords[item.parkName] = { lats: [], lngs: [], dept: item.department };
@@ -1750,6 +1755,9 @@ function autoDetectNearestPark(userLat, userLng) {
       parkCoords[item.parkName].lngs.push(item.lng);
     }
   });
+
+  // หากไม่มีสวนที่มีจุดชำรุดค้างอยู่เลย
+  if (Object.keys(parkCoords).length === 0) return null;
 
   var nearestPark = null;
   var minDistance = Infinity;
@@ -1772,6 +1780,7 @@ function autoDetectNearestPark(userLat, userLng) {
     }
   });
 
+  // หากอยู่ในรัศมีที่กำหนด (2 กม.) และเป็นสวนที่มีจุดชำรุดอยู่จริง
   if (nearestPark && nearestPark.distance <= AUTO_DETECT_RADIUS_KM) {
     return nearestPark;
   }
