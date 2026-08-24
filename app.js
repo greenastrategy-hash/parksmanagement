@@ -18,6 +18,8 @@ var currentTableTab = 'active';
 
 var formPendingBase64 = null;
 var isFormImageRemoved = false;
+var pendingResolveItem = null;
+var pendingResolveBase64 = null;
 
 var currentUser = {
   loggedIn: false,
@@ -33,6 +35,10 @@ var customConfirmCallback = null;
 var categoryChartInstance = null;
 var urgencyChartInstance = null;
 var deptChartInstance = null;
+
+var AUTO_DETECT_RADIUS_KM = 2.0; // รัศมีตรวจจับรอบตัว 2 กิโลเมตร
+var hasAutoDetectedPark = false;
+var userLocationMarker = null;
 
 if (typeof ChartDataLabels !== 'undefined') {
   Chart.register(ChartDataLabels);
@@ -976,6 +982,9 @@ function loadReports() {
       var currentDept = document.getElementById('departmentFilter') ? document.getElementById('departmentFilter').value : 'all';
       updateParkDropdownOptions(currentDept);
       filterMarkers();
+
+      // 🌟 สั่งตรวจจับตำแหน่ง GPS ทันทีที่ข้อมูลพร้อม
+      runAutoLocationCheck();
     })
     .catch(err => {
       showToast('เกิดข้อผิดพลาดในการโหลดข้อมูล: ' + err.message, 'error');
@@ -1085,7 +1094,6 @@ function useMapCenterCoordinate() {
 function resetMapToDefaultView() {
   if (!map) return;
   
-  // บังคับคำนวณพื้นที่แผนที่ใหม่ก่อนย้ายมุมมอง
   map.invalidateSize();
 
   if (bmaDistrictsLayer && bmaDistrictsLayer.getLayers().length > 0) {
@@ -1096,7 +1104,6 @@ function resetMapToDefaultView() {
       duration: 0.5
     });
   } else {
-    // พิกัดศูนย์กลาง กทม. (อนุสาวรีย์ประชาธิปไตย/เสาชิงช้า)
     map.setView([13.7563, 100.5018], 11.5, { 
       animate: true, 
       duration: 0.5 
@@ -1193,7 +1200,6 @@ function drawBMAData(data) {
     interactive: false
   }).addTo(map);
 
-  // 🌟 บังคับคำนวณขนาดและจัดแผนที่เขต กทม. ให้อยู่กึ่งกลางหน้าจอทันที
   setTimeout(function() {
     if (map && bmaDistrictsLayer && bmaDistrictsLayer.getLayers().length > 0) {
       map.invalidateSize();
@@ -1313,11 +1319,16 @@ function handleFormImageSelected(event) {
 function clearFormImagePreview() {
   formPendingBase64 = null;
   isFormImageRemoved = true;
-  document.getElementById('fImageFileCamera').value = '';
-  document.getElementById('fImageFileGallery').value = '';
-  document.getElementById('fExistingImageId').value = '';
-  document.getElementById('formImagePreview').src = '';
-  document.getElementById('formImagePreviewContainer').style.display = 'none';
+  var camInput = document.getElementById('fImageFileCamera');
+  if (camInput) camInput.value = '';
+  var galInput = document.getElementById('fImageFileGallery');
+  if (galInput) galInput.value = '';
+  var existImg = document.getElementById('fExistingImageId');
+  if (existImg) existImg.value = '';
+  var previewImg = document.getElementById('formImagePreview');
+  if (previewImg) previewImg.src = '';
+  var previewContainer = document.getElementById('formImagePreviewContainer');
+  if (previewContainer) previewContainer.style.display = 'none';
   showToast('ลบภาพเรียบร้อยแล้ว', 'info');
 }
 
@@ -1345,10 +1356,14 @@ function handleResolveImageSelected(event) {
 
 function clearResolveImagePreview() {
   pendingResolveBase64 = null;
-  document.getElementById('resolveCameraInput').value = '';
-  document.getElementById('resolveGalleryInput').value = '';
-  document.getElementById('resolveImagePreview').src = '';
-  document.getElementById('resolveImagePreviewBox').style.display = 'none';
+  var camInput = document.getElementById('resolveCameraInput');
+  if (camInput) camInput.value = '';
+  var galInput = document.getElementById('resolveGalleryInput');
+  if (galInput) galInput.value = '';
+  var previewImg = document.getElementById('resolveImagePreview');
+  if (previewImg) previewImg.src = '';
+  var previewBox = document.getElementById('resolveImagePreviewBox');
+  if (previewBox) previewBox.style.display = 'none';
 }
 
 /**
@@ -1426,71 +1441,6 @@ function openEditModalFromCurrentItem() {
   document.getElementById('reportFormModal').style.display = 'flex';
 }
 
-/**
- * 🌟 บันทึกหรือแก้ไขข้อมูลการชำรุด
- */
-function handleFormSubmit(e) {
-  e.preventDefault();
-  if (!currentUser.loggedIn) {
-    showToast('กรุณาเข้าสู่ระบบเจ้าหน้าที่ก่อนบันทึกข้อมูล', 'error');
-    openAuthModal();
-    return;
-  }
-
-  var btn = document.getElementById('fSubmitBtn');
-  if (btn) {
-    btn.disabled = true;
-    btn.innerText = 'กำลังบันทึกข้อมูลและอัปโหลดภาพ...';
-  }
-
-  var deptSelect = document.getElementById('fDepartment');
-  var formData = {
-    rowIndex: document.getElementById('fRowIndex').value,
-    existingImageId: isFormImageRemoved ? '' : document.getElementById('fExistingImageId').value,
-    category: document.getElementById('fCategory').value,
-    department: deptSelect ? deptSelect.value : '',
-    parkName: document.getElementById('fParkName').value.trim(),
-    area: document.getElementById('fArea').value.trim(),
-    issue: document.getElementById('fIssue').value.trim(),
-    urgency: document.getElementById('fUrgency').value,
-    lat: document.getElementById('fLat').value,
-    lng: document.getElementById('fLng').value,
-    notes: document.getElementById('fNotes').value.trim(),
-    imageFile: formPendingBase64 // ใช้ข้อมูล Base64 ที่แปลงไว้จากการถ่ายภาพ/เลือกไฟล์ทันที
-  };
-
-  fetch(API_URL, {
-    method: 'POST',
-    body: JSON.stringify({
-      action: 'saveOrUpdate',
-      formData: formData,
-      userCode: currentUser.code
-    })
-  })
-    .then(res => res.json())
-    .then(res => {
-      if (btn) {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> บันทึกข้อมูล';
-      }
-      if (res.success) {
-        showToast(res.message, 'success');
-        closeModal('reportFormModal');
-        clearFormImagePreview(); // รีเซ็ตพรีวิวภาพ
-        loadReports(); // โหลดข้อมูลใหม่ลงตารางและแผนที่
-      } else {
-        showToast(res.message, 'error');
-      }
-    })
-    .catch(err => {
-      if (btn) {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> บันทึกข้อมูล';
-      }
-      showToast('เกิดข้อผิดพลาด: ' + err.message, 'error');
-    });
-}
-
 function readFileAsBase64(file, callback) {
   if (!file) { callback(null); return; }
   var reader = new FileReader();
@@ -1530,6 +1480,9 @@ function readFileAsBase64(file, callback) {
   reader.readAsDataURL(file);
 }
 
+/**
+ * 🌟 บันทึกหรือแก้ไขข้อมูลการชำรุด (ตัวเดียว ไม่ซ้ำซ้อน)
+ */
 function handleFormSubmit(e) {
   e.preventDefault();
   if (!currentUser.loggedIn) {
@@ -1539,15 +1492,17 @@ function handleFormSubmit(e) {
   }
 
   var btn = document.getElementById('fSubmitBtn');
-  btn.disabled = true;
-  btn.innerText = 'กำลังบันทึกข้อมูลและอัปโหลดภาพ...';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerText = 'กำลังบันทึกข้อมูลและอัปโหลดภาพ...';
+  }
 
   var deptSelect = document.getElementById('fDepartment');
   var formData = {
     rowIndex: document.getElementById('fRowIndex').value,
-    existingImageId: document.getElementById('fExistingImageId').value,
+    existingImageId: isFormImageRemoved ? '' : document.getElementById('fExistingImageId').value,
     category: document.getElementById('fCategory').value,
-    department: deptSelect.value,
+    department: deptSelect ? deptSelect.value : '',
     parkName: document.getElementById('fParkName').value.trim(),
     area: document.getElementById('fArea').value.trim(),
     issue: document.getElementById('fIssue').value.trim(),
@@ -1555,51 +1510,40 @@ function handleFormSubmit(e) {
     lat: document.getElementById('fLat').value,
     lng: document.getElementById('fLng').value,
     notes: document.getElementById('fNotes').value.trim(),
-    imageFile: null
+    imageFile: formPendingBase64
   };
 
-  var fileInput = document.getElementById('fImageFile');
-
-  function executeSave() {
-    fetch(API_URL, {
-      method: 'POST',
-      body: JSON.stringify({
-        action: 'saveOrUpdate',
-        formData: formData,
-        userCode: currentUser.code
-      })
+  fetch(API_URL, {
+    method: 'POST',
+    body: JSON.stringify({
+      action: 'saveOrUpdate',
+      formData: formData,
+      userCode: currentUser.code
     })
-      .then(res => res.json())
-      .then(res => {
+  })
+    .then(res => res.json())
+    .then(res => {
+      if (btn) {
         btn.disabled = false;
         btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> บันทึกข้อมูล';
-        if (res.success) {
-          showToast(res.message, 'success');
-          closeModal('reportFormModal');
-          loadReports();
-        } else {
-          showToast(res.message, 'error');
-        }
-      })
-      .catch(err => {
+      }
+      if (res.success) {
+        showToast(res.message, 'success');
+        closeModal('reportFormModal');
+        clearFormImagePreview();
+        loadReports();
+      } else {
+        showToast(res.message, 'error');
+      }
+    })
+    .catch(err => {
+      if (btn) {
         btn.disabled = false;
         btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> บันทึกข้อมูล';
-        showToast('เกิดข้อผิดพลาด: ' + err.message, 'error');
-      });
-  }
-
-  if (fileInput.files && fileInput.files[0]) {
-    readFileAsBase64(fileInput.files[0], function(b64) {
-      if (b64) formData.imageFile = { base64: b64, type: 'image/jpeg' };
-      executeSave();
+      }
+      showToast('เกิดข้อผิดพลาด: ' + err.message, 'error');
     });
-  } else {
-    executeSave();
-  }
 }
-
-var pendingResolveItem = null;
-var pendingResolveBase64 = null;
 
 /**
  * 🌟 เมื่อกดปุ่ม "ปรับปรุงเสร็จสิ้น" ในหน้าต่างรายละเอียด
@@ -1648,25 +1592,19 @@ function previewResolveImage(event) {
   var file = event.target.files[0];
   if (!file) return;
 
-  if (file.size > 5 * 1024 * 1024) {
-    showToast('⚠️ ขนาดไฟล์ภาพต้องไม่เกิน 5 MB', 'error');
+  if (file.size > 8 * 1024 * 1024) {
+    showToast('⚠️ ขนาดไฟล์ภาพต้องไม่เกิน 8 MB', 'error');
     event.target.value = '';
     return;
   }
 
-  var reader = new FileReader();
-  reader.onload = function(e) {
-    document.getElementById('resolveImagePreview').src = e.target.result;
-    document.getElementById('resolveImagePreviewBox').style.display = 'block';
-
-    var base64Data = e.target.result.split(',')[1];
-    pendingResolveBase64 = {
-      name: file.name,
-      type: file.type,
-      base64: base64Data
-    };
-  };
-  reader.readAsDataURL(file);
+  readFileAsBase64(file, function(b64) {
+    if (b64) {
+      pendingResolveBase64 = { base64: b64, type: 'image/jpeg' };
+      document.getElementById('resolveImagePreview').src = b64;
+      document.getElementById('resolveImagePreviewBox').style.display = 'flex';
+    }
+  });
 }
 
 /**
@@ -1724,8 +1662,8 @@ function submitResolveAction() {
       if (res.success) {
         showToast(res.message, 'success');
         closeResolveConfirmModal();
-        closeModal('detailModal'); // แก้ไขเป็นชื่อฟังก์ชันที่ถูกต้อง
-        loadReports(); // ดึงข้อมูลใหม่
+        closeModal('detailModal');
+        loadReports();
       } else {
         showToast(res.message, 'error');
       }
@@ -1739,23 +1677,9 @@ function submitResolveAction() {
     });
 }
 
-window.onclick = function(event) {
-  ['detailModal', 'authModal', 'reportFormModal', 'confirmModal', 'dashboardModal', 'tableModal'].forEach(function(id) {
-    var modal = document.getElementById(id);
-    if (event.target === modal) closeModal(id);
-  });
-};
-
 // =========================================================
 // 📍 ระบบตรวจจับพิกัด GPS และโฟกัสสวนสาธารณะใกล้เคียง
 // =========================================================
-var AUTO_DETECT_RADIUS_KM = 2.0; // รัศมีตรวจจับรอบตัว 2 กิโลเมตร
-var hasAutoDetectedPark = false;
-var userLocationMarker = null;
-
-/**
- * 📐 คำนวณระยะห่างระหว่าง 2 พิกัด (Haversine Formula) เป็นกิโลเมตร
- */
 function calculateDistanceKm(lat1, lon1, lat2, lon2) {
   var R = 6371; // รัศมีโลก (km)
   var dLat = (lat2 - lat1) * Math.PI / 180;
@@ -1767,9 +1691,6 @@ function calculateDistanceKm(lat1, lon1, lat2, lon2) {
   return R * c;
 }
 
-/**
- * 📍 ค้นหาสวนสาธารณะที่ใกล้ที่สุดจากพิกัด GPS ของผู้ใช้งาน
- */
 function autoDetectNearestPark(userLat, userLng) {
   var combinedData = allDamageData.concat(rawResolvedData || []);
   if (!combinedData || combinedData.length === 0) return null;
@@ -1806,16 +1727,12 @@ function autoDetectNearestPark(userLat, userLng) {
     }
   });
 
-  // หากอยู่ในรัศมีที่กำหนด
   if (nearestPark && nearestPark.distance <= AUTO_DETECT_RADIUS_KM) {
     return nearestPark;
   }
   return null;
 }
 
-/**
- * 📍 ฟังก์ชันกดค้นหาพิกัดด้วยตนเอง (Manual Trigger)
- */
 function manualTriggerUserLocation() {
   var locateBtn = document.querySelector('.btn-map-locate');
   if (locateBtn) locateBtn.classList.add('is-locating');
@@ -1824,9 +1741,6 @@ function manualTriggerUserLocation() {
   runLocationProcess(true);
 }
 
-/**
- * 🚀 ตรวจสอบ GPS อัตโนมัติเมื่อโหลดข้อมูลครั้งแรก
- */
 function runAutoLocationCheck() {
   if (hasAutoDetectedPark) return;
   runLocationProcess(false);
@@ -1848,7 +1762,6 @@ function runLocationProcess(isManual) {
       var uLat = pos.coords.latitude;
       var uLng = pos.coords.longitude;
 
-      // วาดจุดสีฟ้าแสดงตำแหน่งปัจจุบันของผู้ใช้
       if (userLocationMarker) map.removeLayer(userLocationMarker);
       userLocationMarker = L.circleMarker([uLat, uLng], {
         radius: 8,
@@ -1864,7 +1777,6 @@ function runLocationProcess(isManual) {
         var deptFilter = document.getElementById('departmentFilter');
         var parkFilter = document.getElementById('parkFilter');
 
-        // ปรับตัวกรองฝ่ายและสวนให้ตรงกับตำแหน่ง
         if (!currentUser.loggedIn || currentUser.role === 'admin' || currentUser.dept === nearest.dept) {
           if (deptFilter && (!currentUser.loggedIn || currentUser.role === 'admin')) {
             deptFilter.value = nearest.dept;
@@ -1892,24 +1804,9 @@ function runLocationProcess(isManual) {
   );
 }
 
-/**
- * ⚡ อัปเดตฟังก์ชัน loadReports ให้เรียก runAutoLocationCheck()
- */
-function loadReports() {
-  fetch(`${API_URL}?action=getInitialData&userCode=${encodeURIComponent(currentUser.code)}`)
-    .then(res => res.json())
-    .then(response => {
-      allDamageData = response.active || [];
-      rawResolvedData = response.resolved || [];
-
-      var currentDept = document.getElementById('departmentFilter') ? document.getElementById('departmentFilter').value : 'all';
-      updateParkDropdownOptions(currentDept);
-      filterMarkers();
-
-      // 🌟 สั่งตรวจจับตำแหน่ง GPS ทันทีที่ข้อมูลพร้อม
-      runAutoLocationCheck();
-    })
-    .catch(err => {
-      showToast('เกิดข้อผิดพลาดในการโหลดข้อมูล: ' + err.message, 'error');
-    });
-}
+window.onclick = function(event) {
+  ['detailModal', 'authModal', 'reportFormModal', 'confirmModal', 'dashboardModal', 'tableModal', 'resolveConfirmModal'].forEach(function(id) {
+    var modal = document.getElementById(id);
+    if (event.target === modal) closeModal(id);
+  });
+};
