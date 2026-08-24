@@ -1427,7 +1427,7 @@ function openEditModalFromCurrentItem() {
 }
 
 /**
- * 🌟 อัปเดต handleFormSubmit ให้ส่ง base64 ของภาพที่เลือก
+ * 🌟 บันทึกหรือแก้ไขข้อมูลการชำรุด
  */
 function handleFormSubmit(e) {
   e.preventDefault();
@@ -1438,15 +1438,17 @@ function handleFormSubmit(e) {
   }
 
   var btn = document.getElementById('fSubmitBtn');
-  btn.disabled = true;
-  btn.innerText = 'กำลังบันทึกข้อมูลและอัปโหลดภาพ...';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerText = 'กำลังบันทึกข้อมูลและอัปโหลดภาพ...';
+  }
 
   var deptSelect = document.getElementById('fDepartment');
   var formData = {
     rowIndex: document.getElementById('fRowIndex').value,
     existingImageId: isFormImageRemoved ? '' : document.getElementById('fExistingImageId').value,
     category: document.getElementById('fCategory').value,
-    department: deptSelect.value,
+    department: deptSelect ? deptSelect.value : '',
     parkName: document.getElementById('fParkName').value.trim(),
     area: document.getElementById('fArea').value.trim(),
     issue: document.getElementById('fIssue').value.trim(),
@@ -1454,7 +1456,7 @@ function handleFormSubmit(e) {
     lat: document.getElementById('fLat').value,
     lng: document.getElementById('fLng').value,
     notes: document.getElementById('fNotes').value.trim(),
-    imageFile: formPendingBase64
+    imageFile: formPendingBase64 // ใช้ข้อมูล Base64 ที่แปลงไว้จากการถ่ายภาพ/เลือกไฟล์ทันที
   };
 
   fetch(API_URL, {
@@ -1467,19 +1469,24 @@ function handleFormSubmit(e) {
   })
     .then(res => res.json())
     .then(res => {
-      btn.disabled = false;
-      btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> บันทึกข้อมูล';
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> บันทึกข้อมูล';
+      }
       if (res.success) {
         showToast(res.message, 'success');
         closeModal('reportFormModal');
-        loadReports();
+        clearFormImagePreview(); // รีเซ็ตพรีวิวภาพ
+        loadReports(); // โหลดข้อมูลใหม่ลงตารางและแผนที่
       } else {
         showToast(res.message, 'error');
       }
     })
     .catch(err => {
-      btn.disabled = false;
-      btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> บันทึกข้อมูล';
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> บันทึกข้อมูล';
+      }
       showToast('เกิดข้อผิดพลาด: ' + err.message, 'error');
     });
 }
