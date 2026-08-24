@@ -1204,14 +1204,15 @@ function drawBMAData(data) {
     return Object.keys(lats).length <= 2 && Object.keys(lngs).length <= 2;
   }
 
+  // วาดเส้นขอบเขต 50 เขต กทม. แบบโปร่งใส ไม่บังแผนที่
   bmaDistrictsLayer = L.geoJSON(data, {
     filter: feature => !isTrashBox(feature),
     style: () => ({
       color: '#00744b',
-      weight: 1.2,
-      opacity: 0.6,
-      fillColor: '#000000',
-      fillOpacity: 0.0, // ปิดการถมสีทึบในเขตพื้นที่
+      weight: 1.5,
+      opacity: 0.65,
+      fillColor: '#00744b',
+      fillOpacity: 0.03, // โปร่งใสเกือบ 100% เพื่อให้เห็นแผนที่คมชัดทุกระดับซูม
       className: 'bma-district-path'
     }),
     onEachFeature: function(feature, layer) {
@@ -1224,33 +1225,18 @@ function drawBMAData(data) {
           click: e => {
             if (isPickingLocationOnMap) completeMapPinPick(e.latlng.lat, e.latlng.lng);
           },
-          mouseover: e => e.target.setStyle({ weight: 2.0, opacity: 0.9, color: '#004d32', fillOpacity: 0.08 }),
+          mouseover: e => e.target.setStyle({ weight: 2.2, opacity: 0.9, fillOpacity: 0.08 }),
           mouseout: () => bmaDistrictsLayer.resetStyle(layer)
         });
       }
     }
   }).addTo(map);
 
-  var worldOuter = [[90, -180], [90, 180], [-90, 180], [-90, -180]];
-  var maskRings = [worldOuter];
-
-  data.features.forEach(function(feature) {
-    if (isTrashBox(feature)) return;
-    var geom = feature.geometry;
-    if (geom.type === 'Polygon') {
-      geom.coordinates.forEach(ring => maskRings.push(ring.map(c => [c[1], c[0]])));
-    } else if (geom.type === 'MultiPolygon') {
-      geom.coordinates.forEach(poly => poly.forEach(ring => maskRings.push(ring.map(c => [c[1], c[0]]))));
-    }
-  });
-
-  // ปรับหน้ากากนอกเขต กทม. ให้โปร่งบาง (fillOpacity: 0.25) เพื่อไม่ให้บดบังแผนที่
-  bmaMaskLayer = L.polygon(maskRings, {
-    stroke: false,
-    fillColor: '#0f172a',
-    fillOpacity: 0.25,
-    interactive: false
-  }).addTo(map);
+  // นำ Layer หน้ากากสีมืดเดิมออกอย่างสมบูรณ์
+  if (bmaMaskLayer) {
+    map.removeLayer(bmaMaskLayer);
+    bmaMaskLayer = null;
+  }
 
   setTimeout(function() {
     if (map && bmaDistrictsLayer && bmaDistrictsLayer.getLayers().length > 0) {
