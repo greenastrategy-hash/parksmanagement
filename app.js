@@ -182,13 +182,13 @@ document.addEventListener('DOMContentLoaded', function() {
   updateStatsBadgeColors();
   loadReports();
 
-  // 🌟 บังคับให้ Leaflet คำนวณขนาดหน้าจอใหม่อีกครั้งหลังจาก DOM และ CSS เรนเดอร์เสร็จ
+  // 🌟 บังคับคำนวณขนาดและแสดงภาพรวม กทม. กึ่งกลางหน้าจอเมื่อเปิดครั้งแรก
   setTimeout(function() {
     if (map) {
       map.invalidateSize();
       resetMapToDefaultView();
     }
-  }, 300);
+  }, 350);
 
   var btnConfirmOk = document.getElementById('btnConfirmOk');
   if (btnConfirmOk) {
@@ -1035,14 +1035,13 @@ function loadReports() {
       updateParkDropdownOptions(currentDept);
       filterMarkers();
 
-      // 🌟 สั่งตรวจจับตำแหน่ง GPS ทันทีที่ข้อมูลพร้อม
-      runAutoLocationCheck();
+      // 🛑 ปิดการตรวจจับ GPS อัตโนมัติ เพื่อให้คงหน้าจอภาพรวม กทม. ไว้
+      // runAutoLocationCheck();
     })
     .catch(err => {
       showToast('เกิดข้อผิดพลาดในการโหลดข้อมูล: ' + err.message, 'error');
     });
 }
-
 function groupReportsByCoordinate(data) {
   var coordMap = new Map();
 
