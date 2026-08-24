@@ -218,24 +218,19 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function initMap() {
+  // 1. ชั้นแผนที่ถนนมาตรฐาน (Street / Voyager)
   var streetLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
     attribution: '&copy; OpenStreetMap &copy; CARTO',
     subdomains: 'abcd',
     maxZoom: 19
   });
 
-  var satelliteBase = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{x}/{y}', {
-    attribution: '&copy; Esri &mdash; Maxar, Earthstar Geographics',
-    maxZoom: 19
+  // 2. 🛰️ ชั้นภาพถ่ายดาวเทียมคมชัด (Google Hybrid / Satellite Imagery)
+  var satelliteLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+    attribution: '&copy; Google Maps',
+    maxZoom: 20,
+    subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
   });
-
-  var cleanLabels = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png', {
-    subdomains: 'abcd',
-    maxZoom: 19,
-    pane: 'shadowPane'
-  });
-
-  var cleanSatelliteGroup = L.layerGroup([satelliteBase, cleanLabels]);
 
   map = L.map('map', {
     center: [13.7563, 100.5018],
@@ -245,14 +240,15 @@ function initMap() {
     zoomSnap: 0.1,
     zoomDelta: 0.5,
     zoomControl: false,
-    layers: [streetLayer]
+    layers: [streetLayer] // เริ่มต้นด้วยแผนที่ถนน
   });
 
   L.control.zoom({ position: 'topleft' }).addTo(map);
 
+  // 🌟 กล่องสลับชั้นแผนที่ (Layer Switcher) ที่มุมขวาบน
   var baseMaps = {
     "🗺️ แผนที่ถนน": streetLayer,
-    "🛰️ ภาพถ่ายดาวเทียม": cleanSatelliteGroup
+    "🛰️ ภาพถ่ายดาวเทียม": satelliteLayer
   };
   L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map);
 
