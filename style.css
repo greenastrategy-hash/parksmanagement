@@ -1524,20 +1524,27 @@ svg.leaflet-zoom-animated,
 }
 
 /* =========================================================
-   📥 Export CSV Button Styles
+   📥 จัดวางช่องค้นหาและปุ่ม Export CSV ให้อยู่แถวเดียวกัน
    ========================================================= */
 .table-toolbar-right {
   display: flex;
   align-items: center;
   gap: 8px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap; /* ล็อกให้อยู่ในบรรทัดเดียวกัน ไม่ตัดขึ้นบรรทัดใหม่ */
+  width: auto;
+}
+
+.table-search-box {
+  position: relative;
+  min-width: 240px;
+  width: 100%;
 }
 
 .btn-export-csv {
   background: #166534;
   color: #ffffff;
   border: 1px solid #14532d;
-  padding: 6px 14px;
+  padding: 0 14px;
   border-radius: 20px;
   font-size: 0.82rem;
   font-weight: 600;
@@ -1546,9 +1553,10 @@ svg.leaflet-zoom-animated,
   align-items: center;
   gap: 6px;
   box-shadow: 0 2px 4px rgba(22, 101, 52, 0.2);
-  white-space: nowrap;
-  transition: all 0.2s ease;
+  white-space: nowrap; /* ป้องกันข้อความในปุ่มตัดบรรทัด */
+  flex-shrink: 0;      /* ป้องกันปุ่มโดนบีบขนาด */
   height: 34px;
+  transition: all 0.2s ease;
 }
 
 .btn-export-csv:hover {
@@ -1562,14 +1570,24 @@ svg.leaflet-zoom-animated,
   font-size: 0.95rem;
 }
 
+/* รองรับบนหน้าจอมือถือ (ให้อยู่คู่กันในแถวเดียว) */
 @media (max-width: 768px) {
   .table-toolbar-right {
     width: 100%;
-    flex-direction: column;
-    align-items: stretch;
+    display: flex;
+    flex-direction: row; /* คงเป็นแนวนอนคู่กัน */
+    flex-wrap: nowrap;
+    gap: 6px;
   }
+
+  .table-search-box {
+    flex: 1; /* ช่องค้นหาขยายเต็มพื้นที่ที่เหลือ */
+    min-width: 0;
+  }
+
   .btn-export-csv {
-    width: 100%;
-    justify-content: center;
+    width: auto;
+    padding: 0 10px;
+    font-size: 0.78rem;
   }
 }
