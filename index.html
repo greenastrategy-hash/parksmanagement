@@ -164,11 +164,20 @@
             <i class="fa-solid fa-circle-check"></i> ประวัติปรับปรุงเสร็จสิ้น (<span id="tabCountResolved">0</span>)
           </button>
         </div>
+        <!-- แถบควบคุมบนตาราง: สถานะตัวกรอง + ช่องค้นหา + ปุ่ม Export CSV -->
         <div class="table-toolbar">
           <div class="table-filter-info" id="tableFilterInfo"></div>
-          <div class="table-search-box">
-            <i class="fa-solid fa-magnifying-glass search-icon"></i>
-            <input type="text" id="tableSearchInput" oninput="filterTableSearch()" placeholder="ค้นหาในตาราง..." class="form-input table-search-input">
+          
+          <div class="table-toolbar-right">
+            <div class="table-search-box">
+              <i class="fa-solid fa-magnifying-glass search-icon"></i>
+              <input type="text" id="tableSearchInput" oninput="filterTableSearch()" placeholder="ค้นหาในตาราง..." class="form-input table-search-input">
+            </div>
+
+            <!-- 📥 ปุ่ม Export CSV -->
+            <button type="button" class="btn-export-csv" onclick="exportCurrentTableToCSV()" title="ดาวน์โหลดข้อมูลเป็นไฟล์ Excel/CSV">
+              <i class="fa-solid fa-file-excel"></i> ส่งออก CSV
+            </button>
           </div>
         </div>
         <div class="table-responsive-container">
