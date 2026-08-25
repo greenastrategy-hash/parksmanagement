@@ -305,10 +305,17 @@ function updateParkDropdownOptions(selectedDept) {
   parkSelect.value = parkSet[currentPark] ? currentPark : 'all';
 }
 
+/**
+ * 🌟 3. เมื่อเปลี่ยนหน่วยงาน ➔ ให้อัปเดต Dropdown สวนสาธารณะ แล้วจึงกรองและโฟกัสแผนที่
+ */
 function onDepartmentFilterChange() {
   var deptFilter = document.getElementById('departmentFilter');
   var selectedDept = deptFilter ? deptFilter.value : 'all';
+  
+  // อัปเดตรายชื่อสวนในฝ่ายที่เลือก
   updateParkDropdownOptions(selectedDept);
+  
+  // กรองหมุดและปรับโฟกัสแผนที่อัตโนมัติ
   filterMarkers();
 }
 
@@ -825,23 +832,81 @@ function renderGroupedMarkers(data) {
   });
 }
 
+/**
+ * 🌟 4. ฟังก์ชันกรองหมุด พร้อมปรับมุมมองแผนที่ (Auto-Fit / Auto-Focus)
+ */
 function filterMarkers() {
   var filters = getActiveFilters();
   var filtered = allDamageData;
 
-  if (filters.department !== 'all') filtered = filtered.filter(d => d.department === filters.department);
-  if (filters.park !== 'all') filtered = filtered.filter(d => d.parkName === filters.park);
-  if (filters.category !== 'all') filtered = filtered.filter(d => d.category === filters.category);
-  if (filters.urgency !== 'all') filtered = filtered.filter(d => d.urgency === parseInt(filters.urgency, 10));
+  if (filters.department !== 'all') {
+    filtered = filtered.filter(d => d.department === filters.department);
+  }
+
+  if (filters.park !== 'all') {
+    filtered = filtered.filter(d => d.parkName === filters.park);
+  }
+
+  if (filters.category !== 'all') {
+    filtered = filtered.filter(d => d.category === filters.category);
+  }
+
+  if (filters.urgency !== 'all') {
+    filtered = filtered.filter(d => d.urgency === parseInt(filters.urgency, 10));
+  }
 
   updateSummaryStats(filtered);
   renderGroupedMarkers(filtered);
 
+  // 🎯 ปรับโฟกัสและซูมแผนที่ตามเงื่อนไขตัวกรอง
+  if (map) {
+    if (filters.park !== 'all' && filtered.length > 0) {
+      // 🌳 กรณีเลือกสวนสาธารณะ: โฟกัสเจาะจงสวนนั้น
+      var lats = filtered.map(d => d.lat);
+      var lngs = filtered.map(d => d.lng);
+      var minLat = Math.min(...lats), maxLat = Math.max(...lats);
+      var minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
+
+      if (filtered.length === 1 || (minLat === maxLat && minLng === maxLng)) {
+        map.setView([minLat, minLng], 16.5, { animate: true, duration: 0.6 });
+      } else {
+        map.fitBounds([[minLat, minLng], [maxLat, maxLng]], {
+          padding: [40, 40],
+          maxZoom: 17,
+          animate: true,
+          duration: 0.6
+        });
+      }
+    } else if (filters.department !== 'all' && filtered.length > 0) {
+      // 🏢 กรณีเลือกเฉพาะหน่วยงาน (ฝ่าย 1-6): ปรับมุมมองคลุมทุกสวนของฝ่ายนั้น
+      var latsDept = filtered.map(d => d.lat);
+      var lngsDept = filtered.map(d => d.lng);
+      var bounds = [
+        [Math.min(...latsDept), Math.min(...lngsDept)],
+        [Math.max(...latsDept), Math.max(...lngsDept)]
+      ];
+      map.fitBounds(bounds, {
+        padding: [30, 30],
+        maxZoom: 14.5,
+        animate: true,
+        duration: 0.6
+      });
+    } else if (filters.department === 'all' && filters.park === 'all') {
+      // 🗺️ กรณีเลือก "ทุกฝ่าย" และ "ทุกสวน": ดึงกลับภาพรวม กทม.
+      resetMapToDefaultView();
+    }
+  }
+
+  // อัปเดต Modal ตารางและ Dashboard หากเปิดค้างไว้
   var dashModal = document.getElementById('dashboardModal');
-  if (dashModal && dashModal.style.display === 'flex') renderDashboardWithCurrentFilters();
+  if (dashModal && dashModal.style.display === 'flex') {
+    renderDashboardWithCurrentFilters();
+  }
 
   var tblModal = document.getElementById('tableModal');
-  if (tblModal && tblModal.style.display === 'flex') renderTableWithCurrentFilters();
+  if (tblModal && tblModal.style.display === 'flex') {
+    renderTableWithCurrentFilters();
+  }
 }
 
 function openDetailModal(group, index) {
