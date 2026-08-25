@@ -1917,3 +1917,133 @@ window.onclick = function(event) {
     if (event.target === modal) closeModal(id);
   });
 };
+
+/**
+ * 📥 ฟังก์ชันส่งออกข้อมูลตารางปัจจุบันเป็นไฟล์ CSV (UTF-8 with BOM สำหรับ Excel)
+ */
+function exportCurrentTableToCSV() {
+  var dataToExport = currentFilteredTableData || [];
+  var isResolvedTab = (currentTableTab === 'resolved');
+
+  if (dataToExport.length === 0) {
+    showToast('⚠️ ไม่มีข้อมูลสำหรับส่งออกตามเงื่อนไขตัวกรองปัจจุบัน', 'error');
+    return;
+  }
+
+  showToast('กำลังเตรียมไฟล์ CSV สำหรับดาวน์โหลด...', 'info');
+
+  var csvRows = [];
+
+  if (isResolvedTab) {
+    // หัวตารางประวัติปรับปรุงเสร็จสิ้น
+    csvRows.push([
+      'ลำดับ',
+      'หน่วยงาน',
+      'สวนสาธารณะ',
+      'บริเวณ/จุดเกิดเหตุ',
+      'หมวดหมู่',
+      'รายการชำรุด',
+      'ระดับความเร่งด่วน',
+      'ละติจูด',
+      'ลองจิจูด',
+      'วันที่เสร็จสิ้น',
+      'ผู้ดำเนินการปิดงาน',
+      'วิธีการดำเนินการแก้ไข',
+      'หมายเหตุเดิม',
+      'ลิงก์ภาพก่อนทำ',
+      'ลิงก์ภาพหลังทำ'
+    ]);
+
+    dataToExport.forEach(function(item, idx) {
+      var beforeImgUrl = item.imageId ? ('https://drive.google.com/file/d/' + item.imageId + '/view') : '-';
+      var afterImgUrl = item.afterImageId ? ('https://drive.google.com/file/d/' + item.afterImageId + '/view') : '-';
+
+      csvRows.push([
+        idx + 1,
+        item.department || '-',
+        item.parkName || '-',
+        item.area || '-',
+        item.category || '-',
+        item.issue || '-',
+        item.urgency || 1,
+        item.lat || 0,
+        item.lng || 0,
+        item.completedDate || '-',
+        item.operator || '-',
+        item.actionDetail || '-',
+        (item.notes && item.notes !== '-') ? item.notes : '-',
+        beforeImgUrl,
+        afterImgUrl
+      ]);
+    });
+  } else {
+    // หัวตารางรายการรอปรับปรุง
+    csvRows.push([
+      'ลำดับ',
+      'หน่วยงาน',
+      'สวนสาธารณะ',
+      'บริเวณ/จุดเกิดเหตุ',
+      'หมวดหมู่',
+      'รายการชำรุด',
+      'ระดับความเร่งด่วน',
+      'ระดับความเสี่ยง (คำอธิบาย)',
+      'ละติจูด',
+      'ลองจิจูด',
+      'หมายเหตุ',
+      'ลิงก์ภาพถ่ายความเสียหาย'
+    ]);
+
+    dataToExport.forEach(function(item, idx) {
+      var imgUrl = item.imageId ? ('https://drive.google.com/file/d/' + item.imageId + '/view') : '-';
+      var urgTitle = urgencyLabels[item.urgency] || ('ระดับ ' + item.urgency);
+
+      csvRows.push([
+        idx + 1,
+        item.department || '-',
+        item.parkName || '-',
+        item.area || '-',
+        item.category || '-',
+        item.issue || '-',
+        item.urgency || 1,
+        urgTitle,
+        item.lat || 0,
+        item.lng || 0,
+        (item.notes && item.notes !== '-') ? item.notes : '-',
+        imgUrl
+      ]);
+    });
+  }
+
+  // แปลง Array เป็นรูปแบบ CSV ปลอดภัย (Escape Double Quotes)
+  var csvString = csvRows.map(function(row) {
+    return row.map(function(field) {
+      var str = String(field === null || field === undefined ? '' : field);
+      return '"' + str.replace(/"/g, '""') + '"';
+    }).join(',');
+  }).join('\r\n');
+
+  // ใส่ \uFEFF (UTF-8 BOM) เพื่อให้ Microsoft Excel เปิดภาษาไทยได้โดยไม่เป็นภาษาต่างดาว
+  var blob = new Blob(['\uFEFF' + csvString], { type: 'text/csv;charset=utf-8;' });
+  
+  // สร้างชื่อไฟล์ตามวันที่และประเภท
+  var now = new Date();
+  var dateStr = now.getFullYear() + 
+                String(now.getMonth() + 1).padStart(2, '0') + 
+                String(now.getDate()).padStart(2, '0') + '_' + 
+                String(now.getHours()).padStart(2, '0') + 
+                String(now.getMinutes()).padStart(2, '0');
+  
+  var fileName = (isResolvedTab ? 'ประวัติการปรับปรุงเสร็จสิ้น_' : 'รายการแจ้งชำรุดรอปรับปรุง_') + dateStr + '.csv';
+
+  // สั่งดาวน์โหลดอัตโนมัติ
+  var link = document.createElement('a');
+  var url = URL.createObjectURL(blob);
+  link.setAttribute('href', url);
+  link.setAttribute('download', fileName);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+
+  showToast('ดาวน์โหลดไฟล์ CSV เรียบร้อยแล้ว (' + dataToExport.length + ' รายการ)', 'success');
+}
