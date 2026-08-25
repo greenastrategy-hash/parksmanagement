@@ -1522,3 +1522,54 @@ svg.leaflet-zoom-animated,
     grid-template-columns: 1fr;
   }
 }
+
+/* =========================================================
+   📥 Export CSV Button Styles
+   ========================================================= */
+.table-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn-export-csv {
+  background: #166534;
+  color: #ffffff;
+  border: 1px solid #14532d;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 2px 4px rgba(22, 101, 52, 0.2);
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  height: 34px;
+}
+
+.btn-export-csv:hover {
+  background: #15803d;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(22, 101, 52, 0.3);
+}
+
+.btn-export-csv i {
+  color: #86efac;
+  font-size: 0.95rem;
+}
+
+@media (max-width: 768px) {
+  .table-toolbar-right {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .btn-export-csv {
+    width: 100%;
+    justify-content: center;
+  }
+}
