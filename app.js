@@ -1490,8 +1490,8 @@ function openAddModal() {
   document.getElementById('reportFormModal').style.display = 'flex';
 }
 
-/**
- * 🛠️ อัปเดต openEditModalFromCurrentItem ให้ดึงข้อมูลใส่ Input/Datalist
+**
+ * 🛠️ อัปเดต openEditModalFromCurrentItem
  */
 function openEditModalFromCurrentItem() {
   if (!currentUser.loggedIn) {
@@ -1516,9 +1516,10 @@ function openEditModalFromCurrentItem() {
       catSelect.add(new Option(`${item.category} (ข้อมูลเดิม)`, item.category));
     }
     catSelect.value = item.category;
+    onFormCategoryChange();
   }
 
-  // 2. หน่วยงาน (Col B) ➔ สวน (Col C) ➔ บริเวณ (Col D)
+  // 2. หน่วยงาน (Col B) ➔ สวน (Col C) ➔ บริเวณ (Col D/G)
   var deptSelect = document.getElementById('fDepartment');
   if (deptSelect && item.department) {
     if (!Array.from(deptSelect.options).some(o => o.value === item.department)) {
@@ -1530,27 +1531,10 @@ function openEditModalFromCurrentItem() {
     onFormDepartmentChange(item.parkName || '', item.area || '');
   }
 
-  // 3. สิ่งที่ชำรุด (Col E)
-  var issueInput = document.getElementById('fIssueInput');
-  var toiletBox = document.getElementById('toiletItemsContainer');
-  var rawIssue = (item.issue || '').trim();
-
-  document.querySelectorAll('input[name="toiletItem"]').forEach(cb => cb.checked = false);
-
-  if (rawIssue.indexOf('(') !== -1 && rawIssue.indexOf(')') !== -1) {
-    var parts = rawIssue.split('(');
-    var mainIssue = parts[0].trim();
-    var subItems = parts[1].replace(')', '').split(',').map(s => s.trim());
-
-    if (issueInput) issueInput.value = mainIssue;
-    if (toiletBox) toiletBox.style.display = 'block';
-
-    document.querySelectorAll('input[name="toiletItem"]').forEach(cb => {
-      if (subItems.includes(cb.value)) cb.checked = true;
-    });
-  } else {
-    if (issueInput) issueInput.value = rawIssue;
-    onFormIssueInputChange();
+  // 3. รายละเอียดการชำรุด / การปรับปรุง (ใส่ข้อความเดิมทั้งหมด)
+  var issueDetail = document.getElementById('fIssueDetail');
+  if (issueDetail) {
+    issueDetail.value = item.issue || '';
   }
 
   // 4. พิกัด, ระดับความเร่งด่วน, หมายเหตุ
@@ -1617,7 +1601,7 @@ function readFileAsBase64(file, callback) {
 }
 
 /**
- * 🌟 บันทึกหรือแก้ไขข้อมูลการชำรุด (ตัวเดียว ไม่ซ้ำซ้อน)
+ * 💾 บันทึกข้อมูลการชำรุด (รวมส่วนที่ชำรุด/อุปกรณ์สุขภัณฑ์ + รายละเอียดที่พิมพ์)
  */
 function handleFormSubmit(e) {
   e.preventDefault();
@@ -1625,6 +1609,35 @@ function handleFormSubmit(e) {
     showToast('กรุณาเข้าสู่ระบบเจ้าหน้าที่ก่อนบันทึกข้อมูล', 'error');
     openAuthModal();
     return;
+  }
+
+  var cat = document.getElementById('fCategory').value;
+  var userDetail = document.getElementById('fIssueDetail').value.trim();
+
+  if (!userDetail) {
+    showToast('⚠️ กรุณาระบุรายละเอียดการชำรุด / การปรับปรุง', 'error');
+    return;
+  }
+
+  var finalIssue = userDetail;
+
+  // หากเป็นหมวดสุขา: ให้รวมชื่อส่วนที่ชำรุด และอุปกรณ์ Checkbox เข้าไปด้วย
+  if (cat === 'สุขา') {
+    var partSelect = document.getElementById('fToiletPart');
+    var partVal = partSelect ? partSelect.value.trim() : '';
+
+    var checkedItems = [];
+    document.querySelectorAll('input[name="toiletItem"]:checked').forEach(cb => {
+      checkedItems.push(cb.value);
+    });
+
+    var prefix = '';
+    if (partVal) prefix += partVal;
+    if (checkedItems.length > 0) prefix += ` (${checkedItems.join(', ')})`;
+
+    if (prefix) {
+      finalIssue = `${prefix} - ${userDetail}`;
+    }
   }
 
   var btn = document.getElementById('fSubmitBtn');
@@ -1637,11 +1650,11 @@ function handleFormSubmit(e) {
   var formData = {
     rowIndex: document.getElementById('fRowIndex').value,
     existingImageId: isFormImageRemoved ? '' : document.getElementById('fExistingImageId').value,
-    category: document.getElementById('fCategory').value,
+    category: cat,
     department: deptSelect ? deptSelect.value : '',
-    parkName: document.getElementById('fParkName').value.trim(),
-    area: document.getElementById('fArea').value.trim(),
-    issue: document.getElementById('fIssue').value.trim(),
+    parkName: document.getElementById('fParkName').value,
+    area: document.getElementById('fArea').value,
+    issue: finalIssue,
     urgency: document.getElementById('fUrgency').value,
     lat: document.getElementById('fLat').value,
     lng: document.getElementById('fLng').value,
@@ -2091,12 +2104,13 @@ var globalFormOptions = {
   departments: [],
   deptMapping: {},
   catParkAreaMapping: {},
-  issues: [],
-  toiletItems: []
+  toiletParts: [],
+  toiletItems: [],
+  sportsAreas: []
 };
 
 /**
- * 📋 นำข้อมูลตัวเลือกจากชีตมาใส่ในฟอร์มเริ่มต้น
+ * 📋 นำข้อมูลตัวเลือกจากชีตมาใส่ใน Dropdown เริ่มต้น
  */
 function renderFormOptions(options) {
   if (!options) return;
@@ -2116,13 +2130,12 @@ function renderFormOptions(options) {
       (options.departments || []).map(d => `<option value="${escapeHTML(d)}">${escapeHTML(d)}</option>`).join('');
   }
 
-  // 3. สิ่งที่ชำรุด (Col E) ➔ Datalist ให้เลือกหรือพิมพ์เองได้
-  var issueDatalist = document.getElementById('fIssueDatalist');
-  if (issueDatalist) {
-    issueDatalist.innerHTML = (options.issues || []).map(it => `<option value="${escapeHTML(it)}"></option>`).join('');
+  // 3. ส่วนที่ชำรุดในหมวดสุขา (Col E)
+  var toiletPartSelect = document.getElementById('fToiletPart');
+  if (toiletPartSelect) {
+    toiletPartSelect.innerHTML = '<option value="">-- เลือกส่วนที่ชำรุด --</option>' +
+      (options.toiletParts || []).map(p => `<option value="${escapeHTML(p)}">${escapeHTML(p)}</option>`).join('');
   }
-
-  resetFormParkAndAreaDropdowns();
 
   // 4. อุปกรณ์สุขภัณฑ์ Checkbox (Col F)
   var toiletListContainer = document.getElementById('toiletItemsList');
@@ -2134,6 +2147,8 @@ function renderFormOptions(options) {
       </label>
     `).join('');
   }
+
+  resetFormParkAndAreaDropdowns();
 }
 
 /**
@@ -2174,14 +2189,14 @@ function onFormDepartmentChange(selectedParkToSet, selectedAreaToSet) {
 }
 
 /**
- * 🌳 เมื่อเปลี่ยนสวนสาธารณะ: เรียกอัปเดตบริเวณที่พบ
+ * 🌳 เมื่อเปลี่ยนสวนสาธารณะ
  */
 function onFormParkChange(selectedAreaToSet) {
   updateAreaDropdownOptions(selectedAreaToSet);
 }
 
 /**
- * 📍 ฟังก์ชันอัปเดตตัวเลือกบริเวณที่พบตาม (หมวดหมู่ + สวน)
+ * 📍 อัปเดตตัวเลือกบริเวณที่พบ (รองรับกรณีสนามกีฬาจาก Col G)
  */
 function updateAreaDropdownOptions(selectedAreaToSet) {
   var catSelect = document.getElementById('fCategory');
@@ -2192,6 +2207,24 @@ function updateAreaDropdownOptions(selectedAreaToSet) {
   var selectedPark = parkSelect ? parkSelect.value.trim() : '';
 
   if (!areaSelect) return;
+
+  // ⚽ กรณีเลือกหมวด "สนามกีฬา": ดึงตัวเลือกบริเวณจาก Col G (sportsAreas)
+  if (selectedCat === 'สนามกีฬา') {
+    var sportsList = globalFormOptions.sportsAreas || [];
+    var htmlSports = '<option value="">-- เลือกบริเวณ / ประเภทสนาม --</option>';
+    sportsList.forEach(function(s) {
+      htmlSports += `<option value="${escapeHTML(s)}">${escapeHTML(s)}</option>`;
+    });
+    areaSelect.innerHTML = htmlSports;
+
+    if (selectedAreaToSet) {
+      if (!Array.from(areaSelect.options).some(opt => opt.value === selectedAreaToSet)) {
+        areaSelect.add(new Option(selectedAreaToSet, selectedAreaToSet));
+      }
+      areaSelect.value = selectedAreaToSet;
+    }
+    return;
+  }
 
   if (!selectedCat || !selectedPark) {
     areaSelect.innerHTML = '<option value="">-- กรุณาเลือกหมวดหมู่และสวนก่อน --</option>';
@@ -2217,8 +2250,7 @@ function updateAreaDropdownOptions(selectedAreaToSet) {
   areaSelect.innerHTML = html;
 
   if (selectedAreaToSet) {
-    var exists = Array.from(areaSelect.options).some(opt => opt.value === selectedAreaToSet);
-    if (!exists && selectedAreaToSet !== '-') {
+    if (!Array.from(areaSelect.options).some(opt => opt.value === selectedAreaToSet) && selectedAreaToSet !== '-') {
       areaSelect.add(new Option(`${selectedAreaToSet} (ข้อมูลเดิม)`, selectedAreaToSet));
     }
     areaSelect.value = selectedAreaToSet;
@@ -2267,10 +2299,44 @@ function onFormIssueSelectChange() {
 }
 
 /**
- * 🏷️ เมื่อเปลี่ยนหมวดหมู่: อัปเดตบริเวณที่พบให้ตรงกับ หมวดหมู่ + สวน
+ * 🏷️ เมื่อเปลี่ยนหมวดหมู่:
+ * - จัดการแสดง/ซ่อน ส่วนที่ชำรุดของสุขา
+ * - อัปเดตตัวเลือกบริเวณ (กรณีสนามกีฬาจะดึงจาก Col G)
  */
 function onFormCategoryChange() {
+  var catSelect = document.getElementById('fCategory');
+  var cat = catSelect ? catSelect.value.trim() : '';
+  var toiletPartBox = document.getElementById('toiletPartContainer');
+  var toiletPartSelect = document.getElementById('fToiletPart');
+  var toiletItemsBox = document.getElementById('toiletItemsContainer');
+
+  if (cat === 'สุขา') {
+    if (toiletPartBox) toiletPartBox.style.display = 'block';
+  } else {
+    if (toiletPartBox) toiletPartBox.style.display = 'none';
+    if (toiletPartSelect) toiletPartSelect.value = '';
+    if (toiletItemsBox) toiletItemsBox.style.display = 'none';
+    document.querySelectorAll('input[name="toiletItem"]').forEach(cb => cb.checked = false);
+  }
+
   updateAreaDropdownOptions();
+}
+
+/**
+ * 🚽 เมื่อเปลี่ยนตัวเลือก "ส่วนที่ชำรุด" (Col E)
+ */
+function onFormToiletPartChange() {
+  var partSelect = document.getElementById('fToiletPart');
+  var val = partSelect ? partSelect.value.trim() : '';
+  var toiletItemsBox = document.getElementById('toiletItemsContainer');
+
+  // หากเลือกสุขภัณฑ์ห้องน้ำสาธารณะ ให้แสดง Checkbox อุปกรณ์
+  if (val.indexOf('สุขภัณฑ์') !== -1 || val.indexOf('ห้องน้ำ') !== -1) {
+    if (toiletItemsBox) toiletItemsBox.style.display = 'block';
+  } else {
+    if (toiletItemsBox) toiletItemsBox.style.display = 'none';
+    document.querySelectorAll('input[name="toiletItem"]').forEach(cb => cb.checked = false);
+  }
 }
 
 /**
