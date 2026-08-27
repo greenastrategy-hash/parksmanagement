@@ -269,30 +269,39 @@ function getActiveFilters() {
   };
 }
 
+/**
+ * 🌳 อัปเดต Dropdown ตัวกรองสวนสาธารณะบนแถบ Header
+ * 🔒 แสดงเฉพาะรายชื่อสวนจากชีต 'ข้อมูลตัวเลือก' เท่านั้น
+ */
 function updateParkDropdownOptions(selectedDept) {
   var parkSelect = document.getElementById('parkFilter');
   if (!parkSelect) return;
 
   var currentPark = parkSelect.value;
-  var parkSet = {};
+  var validParks = [];
 
-  var combinedData = allDamageData.concat(rawResolvedData || []);
-  combinedData.forEach(function(item) {
-    if (item.parkName && item.parkName !== '-' && item.parkName.trim() !== '') {
-      if (selectedDept === 'all' || item.department === selectedDept) {
+  // ดึงรายชื่อสวนเฉพาะที่มีในชีต 'ข้อมูลตัวเลือก'
+  if (globalFormOptions && globalFormOptions.parks && globalFormOptions.parks.length > 0) {
+    validParks = globalFormOptions.parks.slice().sort();
+  } else {
+    // Fallback กรณีโหลดยังไม่เสร็จ
+    var parkSet = {};
+    var combinedData = allDamageData.concat(rawResolvedData || []);
+    combinedData.forEach(function(item) {
+      if (item.parkName && item.parkName !== '-' && item.parkName.trim() !== '') {
         parkSet[item.parkName.trim()] = true;
       }
-    }
-  });
+    });
+    validParks = Object.keys(parkSet).sort();
+  }
 
-  var parkList = Object.keys(parkSet).sort();
   var html = '<option value="all">🌳 ทุกสวน</option>';
-  parkList.forEach(function(park) {
+  validParks.forEach(function(park) {
     html += '<option value="' + escapeHTML(park) + '">' + escapeHTML(park) + '</option>';
   });
 
   parkSelect.innerHTML = html;
-  parkSelect.value = parkSet[currentPark] ? currentPark : 'all';
+  parkSelect.value = validParks.includes(currentPark) ? currentPark : 'all';
 }
 
 /**
@@ -1482,7 +1491,9 @@ function openAddModal() {
 }
 
 /**
- * 🛠️ แก้ไขฟังก์ชัน openEditModalFromCurrentItem: ดึงข้อมูลเดิมมาแสดงในทุก Dropdown อย่างแม่นยำ
+ * 🛠️ ฟังก์ชันเปิดหน้าต่างแก้ไขข้อมูลเดิม
+ * - โหลดตัวเลือกมาตรฐานจากชีต
+ * - หากค่าเดิมในแถวนั้นไม่ตรงกับตัวเลือกในชีต ให้คงค่านั้นไว้เฉพาะรายการนี้ โดยไม่กระทบตัวเลือกมาตรฐาน
  */
 function openEditModalFromCurrentItem() {
   if (!currentUser.loggedIn) {
@@ -1494,46 +1505,47 @@ function openEditModalFromCurrentItem() {
   if (!currentActiveGroup || !currentActiveGroup.items.length) return;
   var item = currentActiveGroup.items[currentActiveIndex];
 
+  // รีเซ็ตตัวเลือกกลับสู่ชุดมาตรฐานจากชีตก่อนเสมอ
+  renderFormOptions(globalFormOptions);
+
   document.getElementById('formModalTitle').innerHTML = '<i class="fa-solid fa-pen-to-square"></i> แก้ไขข้อมูลการชำรุด';
   document.getElementById('fRowIndex').value = item.rowIndex;
   document.getElementById('fExistingImageId').value = item.imageId || '';
 
-  // 1. เซ็ตค่า หมวดหมู่
+  // 1. หมวดหมู่ (Col A)
   var catSelect = document.getElementById('fCategory');
-  if (catSelect) {
-    if (item.category && !Array.from(catSelect.options).some(o => o.value === item.category)) {
-      catSelect.add(new Option(item.category, item.category));
+  if (catSelect && item.category) {
+    if (!Array.from(catSelect.options).some(o => o.value === item.category)) {
+      catSelect.add(new Option(`${item.category} (ข้อมูลเดิม)`, item.category));
     }
-    catSelect.value = item.category || '';
+    catSelect.value = item.category;
   }
 
-  // 2. เซ็ตค่า หน่วยงาน
+  // 2. หน่วยงาน (Col B)
   var deptSelect = document.getElementById('fDepartment');
-  if (deptSelect) {
-    if (item.department && !Array.from(deptSelect.options).some(o => o.value === item.department)) {
-      deptSelect.add(new Option(item.department, item.department));
+  if (deptSelect && item.department) {
+    if (!Array.from(deptSelect.options).some(o => o.value === item.department)) {
+      deptSelect.add(new Option(`${item.department} (ข้อมูลเดิม)`, item.department));
     }
-    deptSelect.value = item.department || '';
+    deptSelect.value = item.department;
     deptSelect.disabled = (currentUser.role === 'officer');
   }
 
-  // 3. เซ็ตค่า สวนสาธารณะ และ บริเวณที่พบ
+  // 3. สวนสาธารณะ (Col C) และ บริเวณที่พบ (Col D)
   var parkSelect = document.getElementById('fParkName');
-  if (parkSelect) {
-    if (item.parkName && !Array.from(parkSelect.options).some(o => o.value === item.parkName)) {
-      parkSelect.add(new Option(item.parkName, item.parkName));
+  if (parkSelect && item.parkName) {
+    if (!Array.from(parkSelect.options).some(o => o.value === item.parkName)) {
+      parkSelect.add(new Option(`${item.parkName} (ข้อมูลเดิม)`, item.parkName));
     }
-    parkSelect.value = item.parkName || '';
-    // โหลดบริเวณของสวนนี้ และเซ็ตค่าเดิมลงไปทันที
+    parkSelect.value = item.parkName;
     onFormParkChange(item.area || '');
   }
 
-  // 4. จัดการแยกค่า สิ่งที่ชำรุด (Col E) และ Checkbox สุขภัณฑ์ (Col F)
+  // 4. สิ่งที่ชำรุด (Col E) และ Checkbox สุขภัณฑ์ (Col F)
   var issueSelect = document.getElementById('fIssueSelect');
   var toiletBox = document.getElementById('toiletItemsContainer');
   var rawIssue = (item.issue || '').trim();
 
-  // เคลียร์ Checkbox เดิม
   document.querySelectorAll('input[name="toiletItem"]').forEach(cb => cb.checked = false);
 
   if (rawIssue.indexOf('(') !== -1 && rawIssue.indexOf(')') !== -1) {
@@ -1543,7 +1555,7 @@ function openEditModalFromCurrentItem() {
 
     if (issueSelect) {
       if (!Array.from(issueSelect.options).some(o => o.value === mainIssue)) {
-        issueSelect.add(new Option(mainIssue, mainIssue));
+        issueSelect.add(new Option(`${mainIssue} (ข้อมูลเดิม)`, mainIssue));
       }
       issueSelect.value = mainIssue;
     }
@@ -1555,14 +1567,14 @@ function openEditModalFromCurrentItem() {
   } else {
     if (issueSelect) {
       if (rawIssue && !Array.from(issueSelect.options).some(o => o.value === rawIssue)) {
-        issueSelect.add(new Option(rawIssue, rawIssue));
+        issueSelect.add(new Option(`${rawIssue} (ข้อมูลเดิม)`, rawIssue));
       }
       issueSelect.value = rawIssue;
     }
     onFormIssueSelectChange();
   }
 
-  // 5. พิกัด, ระดับความเร่งด่วน, หมายเหตุ
+  // 5. พิกัด ละติจูด / ลองจิจูด / ระดับความเร่งด่วน / หมายเหตุ
   document.getElementById('fUrgency').value = item.urgency || 1;
   document.getElementById('fLat').value = item.lat || '';
   document.getElementById('fLng').value = item.lng || '';
@@ -2105,7 +2117,7 @@ var globalFormOptions = {
 };
 
 /**
- * 📋 นำข้อมูลตัวเลือกเริ่มต้นมาใส่ใน Dropdown ของฟอร์ม
+ * 📋 นำข้อมูลตัวเลือกจากชีต 'ข้อมูลตัวเลือก' มาใส่ใน Dropdown ของฟอร์ม (Strict Mode)
  */
 function renderFormOptions(options) {
   if (!options) return;
@@ -2113,36 +2125,39 @@ function renderFormOptions(options) {
 
   // 1. หมวดหมู่ (Col A)
   var catSelect = document.getElementById('fCategory');
-  if (catSelect && options.categories && options.categories.length > 0) {
+  if (catSelect) {
     catSelect.innerHTML = '<option value="">-- เลือกหมวดหมู่ --</option>' +
-      options.categories.map(c => `<option value="${escapeHTML(c)}">${escapeHTML(c)}</option>`).join('');
+      (options.categories || []).map(c => `<option value="${escapeHTML(c)}">${escapeHTML(c)}</option>`).join('');
   }
 
   // 2. หน่วยงาน (Col B)
   var deptSelect = document.getElementById('fDepartment');
-  if (deptSelect && options.departments && options.departments.length > 0) {
+  if (deptSelect) {
     deptSelect.innerHTML = '<option value="">-- เลือกหน่วยงาน --</option>' +
-      options.departments.map(d => `<option value="${escapeHTML(d)}">${escapeHTML(d)}</option>`).join('');
+      (options.departments || []).map(d => `<option value="${escapeHTML(d)}">${escapeHTML(d)}</option>`).join('');
   }
 
   // 3. สวนสาธารณะ (Col C)
   var parkSelect = document.getElementById('fParkName');
-  if (parkSelect && options.parks && options.parks.length > 0) {
+  if (parkSelect) {
     parkSelect.innerHTML = '<option value="">-- เลือกสวนสาธารณะ --</option>' +
-      options.parks.map(p => `<option value="${escapeHTML(p)}">${escapeHTML(p)}</option>`).join('');
+      (options.parks || []).map(p => `<option value="${escapeHTML(p)}">${escapeHTML(p)}</option>`).join('');
   }
 
-  // 4. สิ่งที่ชำรุด / ต้องการปรับปรุง (Col E) ➔ แสดงทุกรายการเสมอ
+  // 4. สิ่งที่ชำรุด / ต้องการปรับปรุง (Col E)
   var issueSelect = document.getElementById('fIssueSelect');
-  if (issueSelect && options.issues && options.issues.length > 0) {
+  if (issueSelect) {
     issueSelect.innerHTML = '<option value="">-- เลือกสิ่งที่ชำรุด / ปัญหาที่พบ --</option>' +
-      options.issues.map(it => `<option value="${escapeHTML(it)}">${escapeHTML(it)}</option>`).join('');
+      (options.issues || []).map(it => `<option value="${escapeHTML(it)}">${escapeHTML(it)}</option>`).join('');
   }
+
+  // รีเซ็ต Dropdown บริเวณที่พบ
+  resetDependentFormDropdowns();
 
   // 5. อุปกรณ์สุขภัณฑ์ Checkbox (Col F)
   var toiletListContainer = document.getElementById('toiletItemsList');
-  if (toiletListContainer && options.toiletItems && options.toiletItems.length > 0) {
-    toiletListContainer.innerHTML = options.toiletItems.map(item => `
+  if (toiletListContainer) {
+    toiletListContainer.innerHTML = (options.toiletItems || []).map(item => `
       <label class="toilet-checkbox-item">
         <input type="checkbox" name="toiletItem" value="${escapeHTML(item)}">
         <span>${escapeHTML(item)}</span>
@@ -2152,7 +2167,7 @@ function renderFormOptions(options) {
 }
 
 /**
- * 🌳 เมื่อเปลี่ยนสวนสาธารณะ: กรองเฉพาะ "บริเวณที่พบ (Col D)" ของสวนนั้น
+ * 🌳 เมื่อเปลี่ยนสวนสาธารณะ: กรองเฉพาะ "บริเวณที่พบ (Col D)" ที่กำหนดไว้ในชีตสำหรับสวนนั้น
  */
 function onFormParkChange(selectedAreaToSet) {
   var parkSelect = document.getElementById('fParkName');
@@ -2176,12 +2191,12 @@ function onFormParkChange(selectedAreaToSet) {
 
   areaSelect.innerHTML = html;
 
-  // หากมีการส่งค่าบริเวณที่ต้องการเลือก (เช่น จากการกดแก้ไข)
+  // กรณีเปิดแก้ไขข้อมูลเดิม (ถ้าค่าเดิมไม่ตรงกับชีต จะคงค่าเดิมไว้เฉพาะฟอร์มนี้)
   if (selectedAreaToSet) {
-    // ถ้าไม่มี option เดิม ให้ append เข้าไปชั่วคราว
     var exists = Array.from(areaSelect.options).some(opt => opt.value === selectedAreaToSet);
     if (!exists && selectedAreaToSet !== '-') {
-      areaSelect.add(new Option(selectedAreaToSet, selectedAreaToSet));
+      var customOpt = new Option(`${selectedAreaToSet} (ข้อมูลเดิม)`, selectedAreaToSet);
+      areaSelect.add(customOpt);
     }
     areaSelect.value = selectedAreaToSet;
   }
