@@ -488,21 +488,22 @@
               <option value="">-- กรุณาเลือกหน่วยงานก่อน --</option>
             </select>
           </div>
-          <!-- บริเวณที่พบ (Col D) -->
+          <!-- บริเวณที่พบ (Col D - สอดคล้องกับหมวดหมู่และสวน) -->
           <div class="form-group">
             <label><i class="fa-solid fa-map-pin"></i> บริเวณที่พบ *</label>
             <select id="fArea" required class="form-input">
-              <option value="">-- กรุณาเลือกสวนสาธารณะก่อน --</option>
+              <option value="">-- กรุณาเลือกหมวดหมู่และสวนก่อน --</option>
             </select>
           </div>
         </div>
 
-        <!-- สิ่งที่ชำรุด / ต้องการปรับปรุง (Col E) -->
+        <!-- สิ่งที่ชำรุด / ต้องการปรับปรุง (Col E - เลือกจากรายการหรือพิมพ์เองได้) -->
         <div class="form-group">
           <label><i class="fa-solid fa-triangle-exclamation"></i> สิ่งที่ชำรุด / ต้องการปรับปรุง *</label>
-          <select id="fIssueSelect" required class="form-input" onchange="onFormIssueSelectChange()">
-            <option value="">-- เลือกสิ่งที่ชำรุด / ปัญหาที่พบ --</option>
-          </select>
+          <input type="text" id="fIssueInput" list="fIssueDatalist" required placeholder="เลือกจากรายการ หรือพิมพ์ระบุปัญหา..." class="form-input" oninput="onFormIssueInputChange()">
+          <datalist id="fIssueDatalist">
+            <!-- ตัวเลือกจะถูกสร้างอัตโนมัติจากชีต -->
+          </datalist>
         </div>
 
         <!-- 🚻 กล่องตัวเลือกหลายรายการสำหรับ สุขภัณฑ์ห้องน้ำสาธารณะ (Col F) -->
@@ -511,7 +512,7 @@
             <i class="fa-solid fa-restroom text-emerald"></i> ระบุอุปกรณ์สุขภัณฑ์ที่ชำรุด (เลือกได้หลายรายการ) *
           </label>
           <div id="toiletItemsList" class="toilet-checkbox-grid">
-            <!-- รายการ Checkbox จะถูกสร้างอัตโนมัติจากข้อมูลชีต -->
+            <!-- Checkbox Items -->
           </div>
         </div>
 
