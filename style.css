@@ -1591,3 +1591,56 @@ svg.leaflet-zoom-animated,
     font-size: 0.78rem;
   }
 }
+
+/* =========================================================
+   🚻 Toilet Multi-select Checkbox Grid Styles
+   ========================================================= */
+.toilet-items-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--dark-green) !important;
+}
+
+.toilet-checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+  padding: 10px 12px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.toilet-checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: #1e293b;
+  cursor: pointer;
+  background: #ffffff;
+  padding: 5px 8px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  transition: all 0.15s ease;
+}
+
+.toilet-checkbox-item:hover {
+  background: #e6f4ea;
+  border-color: #a7f3d0;
+}
+
+.toilet-checkbox-item input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--primary-green);
+  cursor: pointer;
+}
+
+@media (max-width: 500px) {
+  .toilet-checkbox-grid {
+    grid-template-columns: 1fr;
+  }
+}
