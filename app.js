@@ -2037,3 +2037,237 @@ function exportCurrentTableToCSV() {
 
   showToast('ดาวน์โหลดไฟล์ CSV เรียบร้อยแล้ว (' + dataToExport.length + ' รายการ)', 'success');
 }
+
+var globalFormOptions = {
+  categories: [],
+  departments: [],
+  parks: [],
+  areas: [],
+  issues: [],
+  toiletItems: []
+};
+
+/**
+ * 📋 นำข้อมูลตัวเลือกจากชีตมา Render ลงใน Dropdown ของฟอร์ม
+ */
+function renderFormOptions(options) {
+  if (!options) return;
+  globalFormOptions = options;
+
+  // 1. หมวดหมู่ (Col A)
+  var catSelect = document.getElementById('fCategory');
+  if (catSelect && options.categories) {
+    catSelect.innerHTML = '<option value="">-- เลือกหมวดหมู่ --</option>' +
+      options.categories.map(c => `<option value="${escapeHTML(c)}">${escapeHTML(c)}</option>`).join('');
+  }
+
+  // 2. หน่วยงาน (Col B)
+  var deptSelect = document.getElementById('fDepartment');
+  if (deptSelect && options.departments) {
+    deptSelect.innerHTML = '<option value="">-- เลือกหน่วยงาน --</option>' +
+      options.departments.map(d => `<option value="${escapeHTML(d)}">${escapeHTML(d)}</option>`).join('');
+  }
+
+  // 3. สวนสาธารณะ (Col C)
+  var parkSelect = document.getElementById('fParkName');
+  if (parkSelect && options.parks) {
+    parkSelect.innerHTML = '<option value="">-- เลือกสวนสาธารณะ --</option>' +
+      options.parks.map(p => `<option value="${escapeHTML(p)}">${escapeHTML(p)}</option>`).join('');
+  }
+
+  // 4. บริเวณที่พบ (Col D)
+  var areaSelect = document.getElementById('fArea');
+  if (areaSelect && options.areas) {
+    areaSelect.innerHTML = '<option value="">-- เลือกบริเวณที่พบ --</option>' +
+      options.areas.map(a => `<option value="${escapeHTML(a)}">${escapeHTML(a)}</option>`).join('');
+  }
+
+  // 5. สิ่งที่ชำรุด (Col E)
+  var issueSelect = document.getElementById('fIssueSelect');
+  if (issueSelect && options.issues) {
+    issueSelect.innerHTML = '<option value="">-- เลือกสิ่งที่ชำรุด / ปัญหาที่พบ --</option>' +
+      options.issues.map(it => `<option value="${escapeHTML(it)}">${escapeHTML(it)}</option>`).join('');
+  }
+
+  // 6. อุปกรณ์สุขภัณฑ์ห้องน้ำ Checkboxes (Col F)
+  var toiletListContainer = document.getElementById('toiletItemsList');
+  if (toiletListContainer && options.toiletItems) {
+    toiletListContainer.innerHTML = options.toiletItems.map(item => `
+      <label class="toilet-checkbox-item">
+        <input type="checkbox" name="toiletItem" value="${escapeHTML(item)}">
+        <span>${escapeHTML(item)}</span>
+      </label>
+    `).join('');
+  }
+}
+
+/**
+ * 🚻 เมื่อเปลี่ยนค่าสิ่งที่ชำรุด: หากมีคำว่า "สุขภัณฑ์" ให้แสดงกล่อง Checkbox หลายรายการ
+ */
+function onFormIssueSelectChange() {
+  var issueSelect = document.getElementById('fIssueSelect');
+  var selectedVal = issueSelect ? issueSelect.value : '';
+  var toiletBox = document.getElementById('toiletItemsContainer');
+
+  // ตรวจจับคำว่า "สุขภัณฑ์" หรือ "ห้องน้ำ"
+  if (selectedVal.indexOf('สุขภัณฑ์') !== -1 || selectedVal.indexOf('สุขา') !== -1) {
+    if (toiletBox) toiletBox.style.display = 'block';
+  } else {
+    if (toiletBox) toiletBox.style.display = 'none';
+    // เคลียร์ Checkbox
+    document.querySelectorAll('input[name="toiletItem"]').forEach(cb => cb.checked = false);
+  }
+}
+
+function onFormCategoryChange() {
+  // หากเลือกหมวดสุขา อาจช่วยเปิด/ปิด หรือปรับรายการเพิ่มเติมได้ตามต้องการ
+}
+
+/**
+ * ⚡ อัปเดตฟังก์ชัน loadReports ให้รับ options จาก Backend
+ */
+function loadReports() {
+  fetch(`${API_URL}?action=getInitialData&userCode=${encodeURIComponent(currentUser.code)}`)
+    .then(res => res.json())
+    .then(response => {
+      allDamageData = response.active || [];
+      rawResolvedData = response.resolved || [];
+
+      // 🌟 อัปเดตตัวเลือกในฟอร์มจากชีต
+      if (response.options) {
+        renderFormOptions(response.options);
+      }
+
+      var currentDept = document.getElementById('departmentFilter') ? document.getElementById('departmentFilter').value : 'all';
+      updateParkDropdownOptions(currentDept);
+      filterMarkers();
+    })
+    .catch(err => {
+      showToast('เกิดข้อผิดพลาดในการโหลดข้อมูล: ' + err.message, 'error');
+    });
+}
+
+/**
+ * 🌟 อัปเดต openAddModal ให้รีเซ็ตค่า Dropdowns และ Checkbox
+ */
+function openAddModal() {
+  if (!currentUser.loggedIn) {
+    showToast('กรุณาเข้าสู่ระบบเจ้าหน้าที่ก่อนเพิ่มรายการ', 'error');
+    openAuthModal();
+    return;
+  }
+
+  document.getElementById('formModalTitle').innerHTML = '<i class="fa-solid fa-plus-circle"></i> บันทึกรายการแจ้งชำรุดใหม่';
+  document.getElementById('reportForm').reset();
+  document.getElementById('fRowIndex').value = '';
+  document.getElementById('fExistingImageId').value = '';
+  
+  formPendingBase64 = null;
+  isFormImageRemoved = false;
+  document.getElementById('formImagePreviewContainer').style.display = 'none';
+  document.getElementById('formImageHint').style.display = 'none';
+
+  // ซ่อนกล่อง Checkbox สุขภัณฑ์
+  var toiletBox = document.getElementById('toiletItemsContainer');
+  if (toiletBox) toiletBox.style.display = 'none';
+  document.querySelectorAll('input[name="toiletItem"]').forEach(cb => cb.checked = false);
+
+  var deptSelect = document.getElementById('fDepartment');
+  if (currentUser.role === 'officer') {
+    deptSelect.value = currentUser.dept;
+    deptSelect.disabled = true;
+  } else {
+    deptSelect.disabled = false;
+  }
+
+  document.getElementById('reportFormModal').style.display = 'flex';
+}
+
+/**
+ * 🌟 อัปเดต handleFormSubmit ให้รวมรายการที่เลือกจาก Checkbox เข้ากับ Issue
+ */
+function handleFormSubmit(e) {
+  e.preventDefault();
+  if (!currentUser.loggedIn) {
+    showToast('กรุณาเข้าสู่ระบบเจ้าหน้าที่ก่อนบันทึกข้อมูล', 'error');
+    openAuthModal();
+    return;
+  }
+
+  var baseIssue = document.getElementById('fIssueSelect').value.trim();
+  if (!baseIssue) {
+    showToast('⚠️ กรุณาเลือกสิ่งที่ชำรุด', 'error');
+    return;
+  }
+
+  // รวมรายการ Checkbox สุขภัณฑ์ (ถ้ามีเปิดอยู่)
+  var toiletBox = document.getElementById('toiletItemsContainer');
+  var finalIssue = baseIssue;
+
+  if (toiletBox && toiletBox.style.display !== 'none') {
+    var checkedItems = [];
+    document.querySelectorAll('input[name="toiletItem"]:checked').forEach(cb => {
+      checkedItems.push(cb.value);
+    });
+
+    if (checkedItems.length > 0) {
+      finalIssue = baseIssue + ' (' + checkedItems.join(', ') + ')';
+    } else {
+      showToast('⚠️ กรุณาเลือกอุปกรณ์สุขภัณฑ์ที่ชำรุดอย่างน้อย 1 รายการ', 'error');
+      return;
+    }
+  }
+
+  var btn = document.getElementById('fSubmitBtn');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerText = 'กำลังบันทึกข้อมูลและอัปโหลดภาพ...';
+  }
+
+  var deptSelect = document.getElementById('fDepartment');
+  var formData = {
+    rowIndex: document.getElementById('fRowIndex').value,
+    existingImageId: isFormImageRemoved ? '' : document.getElementById('fExistingImageId').value,
+    category: document.getElementById('fCategory').value,
+    department: deptSelect ? deptSelect.value : '',
+    parkName: document.getElementById('fParkName').value,
+    area: document.getElementById('fArea').value,
+    issue: finalIssue,
+    urgency: document.getElementById('fUrgency').value,
+    lat: document.getElementById('fLat').value,
+    lng: document.getElementById('fLng').value,
+    notes: document.getElementById('fNotes').value.trim(),
+    imageFile: formPendingBase64
+  };
+
+  fetch(API_URL, {
+    method: 'POST',
+    body: JSON.stringify({
+      action: 'saveOrUpdate',
+      formData: formData,
+      userCode: currentUser.code
+    })
+  })
+    .then(res => res.json())
+    .then(res => {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> บันทึกข้อมูล';
+      }
+      if (res.success) {
+        showToast(res.message, 'success');
+        closeModal('reportFormModal');
+        clearFormImagePreview();
+        loadReports();
+      } else {
+        showToast(res.message, 'error');
+      }
+    })
+    .catch(err => {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> บันทึกข้อมูล';
+      }
+      showToast('เกิดข้อผิดพลาด: ' + err.message, 'error');
+    });
+}
