@@ -488,7 +488,7 @@
               <option value="">-- กรุณาเลือกหน่วยงานก่อน --</option>
             </select>
           </div>
-          <!-- บริเวณที่พบ (Col D - สอดคล้องกับหมวดหมู่และสวน) -->
+          <!-- บริเวณที่พบ (Col D หรือ Col G เมื่อเลือกหมวดสนามกีฬา) -->
           <div class="form-group">
             <label><i class="fa-solid fa-map-pin"></i> บริเวณที่พบ *</label>
             <select id="fArea" required class="form-input">
@@ -497,16 +497,15 @@
           </div>
         </div>
 
-        <!-- สิ่งที่ชำรุด / ต้องการปรับปรุง (Col E - เลือกจากรายการหรือพิมพ์เองได้) -->
-        <div class="form-group">
-          <label><i class="fa-solid fa-triangle-exclamation"></i> สิ่งที่ชำรุด / ต้องการปรับปรุง *</label>
-          <input type="text" id="fIssueInput" list="fIssueDatalist" required placeholder="เลือกจากรายการ หรือพิมพ์ระบุปัญหา..." class="form-input" oninput="onFormIssueInputChange()">
-          <datalist id="fIssueDatalist">
-            <!-- ตัวเลือกจะถูกสร้างอัตโนมัติจากชีต -->
-          </datalist>
+        <!-- 🚻 ตัวเลือก: ส่วนที่ชำรุด (เฉพาะหมวดสุขา จาก Col E) -->
+        <div class="form-group" id="toiletPartContainer" style="display: none;">
+          <label><i class="fa-solid fa-toilet"></i> ส่วนที่ชำรุด (หมวดสุขา) *</label>
+          <select id="fToiletPart" class="form-input" onchange="onFormToiletPartChange()">
+            <option value="">-- เลือกส่วนที่ชำรุด --</option>
+          </select>
         </div>
 
-        <!-- 🚻 กล่องตัวเลือกหลายรายการสำหรับ สุขภัณฑ์ห้องน้ำสาธารณะ (Col F) -->
+        <!-- 🚻 กล่องตัวเลือกหลายรายการ: อุปกรณ์สุขภัณฑ์ (จาก Col F) -->
         <div class="form-group" id="toiletItemsContainer" style="display: none;">
           <label class="toilet-items-title">
             <i class="fa-solid fa-restroom text-emerald"></i> ระบุอุปกรณ์สุขภัณฑ์ที่ชำรุด (เลือกได้หลายรายการ) *
@@ -514,6 +513,12 @@
           <div id="toiletItemsList" class="toilet-checkbox-grid">
             <!-- Checkbox Items -->
           </div>
+        </div>
+
+        <!-- 📝 รายละเอียดการชำรุด / การปรับปรุง (พิมพ์อิสระ ไม่ดึงจากชีต) -->
+        <div class="form-group">
+          <label><i class="fa-solid fa-pen-to-square"></i> รายละเอียดการชำรุด / การปรับปรุง *</label>
+          <textarea id="fIssueDetail" required rows="3" placeholder="ระบุรายละเอียดความเสียหาย เช่น ท่อน้ำรั่วซึม, ก๊อกน้ำหลุด, พื้นชำรุด..." class="form-input"></textarea>
         </div>
 
         <div class="form-group">
