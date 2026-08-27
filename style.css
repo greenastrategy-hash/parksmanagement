@@ -1644,3 +1644,40 @@ svg.leaflet-zoom-animated,
     grid-template-columns: 1fr;
   }
 }
+
+/* =========================================================
+   🛠️ Fix Modal Resolve Scrollbar & Floating Footer
+   ========================================================= */
+#resolveConfirmModal .modal-content {
+  max-height: 90vh; /* ความสูงไม่เกิน 90% ของหน้าจอ */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* ล็อกส่วนหัวและท้าย */
+}
+
+#resolveConfirmModal .modal-body {
+  overflow-y: auto; /* เปิด Scrollbar ให้เลื่อนดูรูปและข้อความได้ */
+  flex: 1 1 auto;
+  max-height: calc(90vh - 125px);
+  padding: 16px;
+  -webkit-overflow-scrolling: touch;
+}
+
+#resolveConfirmModal .modal-footer {
+  flex-shrink: 0; /* ตรึงแถบปุ่มกดไว้ด้านล่างเสมอ */
+  background: #ffffff;
+  border-top: 1px solid #e2e8f0;
+  padding: 12px 16px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* จำกัดขนาดรูปพรีวิวไม่ให้ดันหน้าจอสูงเกินไป */
+#resolveImagePreviewBox .image-preview-box {
+  max-height: 220px;
+  width: 100%;
+  object-fit: contain;
+  border-radius: 8px;
+  background: #f8fafc;
+}
