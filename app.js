@@ -1491,9 +1491,7 @@ function openAddModal() {
 }
 
 /**
- * 🛠️ ฟังก์ชันเปิดหน้าต่างแก้ไขข้อมูลเดิม
- * - โหลดตัวเลือกมาตรฐานจากชีต
- * - หากค่าเดิมในแถวนั้นไม่ตรงกับตัวเลือกในชีต ให้คงค่านั้นไว้เฉพาะรายการนี้ โดยไม่กระทบตัวเลือกมาตรฐาน
+ * 🛠️ อัปเดต openEditModalFromCurrentItem ให้โหลดหน่วยงาน ➔ สวน ➔ บริเวณ ตามลำดับ
  */
 function openEditModalFromCurrentItem() {
   if (!currentUser.loggedIn) {
@@ -1505,7 +1503,6 @@ function openEditModalFromCurrentItem() {
   if (!currentActiveGroup || !currentActiveGroup.items.length) return;
   var item = currentActiveGroup.items[currentActiveIndex];
 
-  // รีเซ็ตตัวเลือกกลับสู่ชุดมาตรฐานจากชีตก่อนเสมอ
   renderFormOptions(globalFormOptions);
 
   document.getElementById('formModalTitle').innerHTML = '<i class="fa-solid fa-pen-to-square"></i> แก้ไขข้อมูลการชำรุด';
@@ -1521,7 +1518,7 @@ function openEditModalFromCurrentItem() {
     catSelect.value = item.category;
   }
 
-  // 2. หน่วยงาน (Col B)
+  // 2. หน่วยงาน (Col B) ➔ สวน (Col C) ➔ บริเวณ (Col D)
   var deptSelect = document.getElementById('fDepartment');
   if (deptSelect && item.department) {
     if (!Array.from(deptSelect.options).some(o => o.value === item.department)) {
@@ -1529,19 +1526,12 @@ function openEditModalFromCurrentItem() {
     }
     deptSelect.value = item.department;
     deptSelect.disabled = (currentUser.role === 'officer');
+
+    // สั่งโหลดสวนของหน่วยงานนี้ และบริเวณของสวนนั้นทันที
+    onFormDepartmentChange(item.parkName || '', item.area || '');
   }
 
-  // 3. สวนสาธารณะ (Col C) และ บริเวณที่พบ (Col D)
-  var parkSelect = document.getElementById('fParkName');
-  if (parkSelect && item.parkName) {
-    if (!Array.from(parkSelect.options).some(o => o.value === item.parkName)) {
-      parkSelect.add(new Option(`${item.parkName} (ข้อมูลเดิม)`, item.parkName));
-    }
-    parkSelect.value = item.parkName;
-    onFormParkChange(item.area || '');
-  }
-
-  // 4. สิ่งที่ชำรุด (Col E) และ Checkbox สุขภัณฑ์ (Col F)
+  // 3. สิ่งที่ชำรุด (Col E) และ Checkbox สุขภัณฑ์ (Col F)
   var issueSelect = document.getElementById('fIssueSelect');
   var toiletBox = document.getElementById('toiletItemsContainer');
   var rawIssue = (item.issue || '').trim();
@@ -1574,7 +1564,7 @@ function openEditModalFromCurrentItem() {
     onFormIssueSelectChange();
   }
 
-  // 5. พิกัด ละติจูด / ลองจิจูด / ระดับความเร่งด่วน / หมายเหตุ
+  // 4. พิกัด ละติจูด / ลองจิจูด / ระดับความเร่งด่วน / หมายเหตุ
   document.getElementById('fUrgency').value = item.urgency || 1;
   document.getElementById('fLat').value = item.lat || '';
   document.getElementById('fLng').value = item.lng || '';
@@ -1583,7 +1573,7 @@ function openEditModalFromCurrentItem() {
   formPendingBase64 = null;
   isFormImageRemoved = false;
 
-  // 6. รูปภาพเดิม
+  // 5. รูปภาพเดิม
   if (item.imageUrl && item.imageId) {
     document.getElementById('formImagePreview').src = item.imageUrl;
     document.getElementById('formImagePreviewContainer').style.display = 'flex';
@@ -2116,8 +2106,17 @@ var globalFormOptions = {
   toiletItems: []
 };
 
+var globalFormOptions = {
+  categories: [],
+  departments: [],
+  deptMapping: {},
+  parkMapping: {},
+  issues: [],
+  toiletItems: []
+};
+
 /**
- * 📋 นำข้อมูลตัวเลือกจากชีต 'ข้อมูลตัวเลือก' มาใส่ใน Dropdown ของฟอร์ม (Strict Mode)
+ * 📋 นำข้อมูลตัวเลือกจากชีตมาใส่ใน Dropdown เริ่มต้น
  */
 function renderFormOptions(options) {
   if (!options) return;
@@ -2137,24 +2136,17 @@ function renderFormOptions(options) {
       (options.departments || []).map(d => `<option value="${escapeHTML(d)}">${escapeHTML(d)}</option>`).join('');
   }
 
-  // 3. สวนสาธารณะ (Col C)
-  var parkSelect = document.getElementById('fParkName');
-  if (parkSelect) {
-    parkSelect.innerHTML = '<option value="">-- เลือกสวนสาธารณะ --</option>' +
-      (options.parks || []).map(p => `<option value="${escapeHTML(p)}">${escapeHTML(p)}</option>`).join('');
-  }
-
-  // 4. สิ่งที่ชำรุด / ต้องการปรับปรุง (Col E)
+  // 3. สิ่งที่ชำรุด / ต้องการปรับปรุง (Col E)
   var issueSelect = document.getElementById('fIssueSelect');
   if (issueSelect) {
     issueSelect.innerHTML = '<option value="">-- เลือกสิ่งที่ชำรุด / ปัญหาที่พบ --</option>' +
       (options.issues || []).map(it => `<option value="${escapeHTML(it)}">${escapeHTML(it)}</option>`).join('');
   }
 
-  // รีเซ็ต Dropdown บริเวณที่พบ
-  resetDependentFormDropdowns();
+  // รีเซ็ต Dropdown สวน และ บริเวณ
+  resetFormParkAndAreaDropdowns();
 
-  // 5. อุปกรณ์สุขภัณฑ์ Checkbox (Col F)
+  // 4. อุปกรณ์สุขภัณฑ์ Checkbox (Col F)
   var toiletListContainer = document.getElementById('toiletItemsList');
   if (toiletListContainer) {
     toiletListContainer.innerHTML = (options.toiletItems || []).map(item => `
@@ -2167,7 +2159,45 @@ function renderFormOptions(options) {
 }
 
 /**
- * 🌳 เมื่อเปลี่ยนสวนสาธารณะ: กรองเฉพาะ "บริเวณที่พบ (Col D)" ที่กำหนดไว้ในชีตสำหรับสวนนั้น
+ * 🏢 เมื่อเปลี่ยนหน่วยงานในฟอร์ม: กรองเฉพาะ "สวนสาธารณะ (Col C)" ของหน่วยงานนั้น
+ */
+function onFormDepartmentChange(selectedParkToSet, selectedAreaToSet) {
+  var deptSelect = document.getElementById('fDepartment');
+  var selectedDept = deptSelect ? deptSelect.value.trim() : '';
+  var parkSelect = document.getElementById('fParkName');
+  var areaSelect = document.getElementById('fArea');
+
+  if (!parkSelect) return;
+
+  if (!selectedDept || !globalFormOptions.deptMapping || !globalFormOptions.deptMapping[selectedDept]) {
+    parkSelect.innerHTML = '<option value="">-- กรุณาเลือกหน่วยงานก่อน --</option>';
+    if (areaSelect) areaSelect.innerHTML = '<option value="">-- กรุณาเลือกสวนสาธารณะก่อน --</option>';
+    return;
+  }
+
+  var parksList = globalFormOptions.deptMapping[selectedDept] || [];
+  var html = '<option value="">-- เลือกสวนสาธารณะ --</option>';
+  parksList.forEach(function(p) {
+    html += `<option value="${escapeHTML(p)}">${escapeHTML(p)}</option>`;
+  });
+
+  parkSelect.innerHTML = html;
+
+  if (selectedParkToSet) {
+    var exists = Array.from(parkSelect.options).some(opt => opt.value === selectedParkToSet);
+    if (!exists && selectedParkToSet !== '-') {
+      var customOpt = new Option(`${selectedParkToSet} (ข้อมูลเดิม)`, selectedParkToSet);
+      parkSelect.add(customOpt);
+    }
+    parkSelect.value = selectedParkToSet;
+    onFormParkChange(selectedAreaToSet);
+  } else {
+    if (areaSelect) areaSelect.innerHTML = '<option value="">-- กรุณาเลือกสวนสาธารณะก่อน --</option>';
+  }
+}
+
+/**
+ * 🌳 เมื่อเปลี่ยนสวนสาธารณะในฟอร์ม: กรองเฉพาะ "บริเวณที่พบ (Col D)" ของสวนนั้น
  */
 function onFormParkChange(selectedAreaToSet) {
   var parkSelect = document.getElementById('fParkName');
@@ -2191,7 +2221,6 @@ function onFormParkChange(selectedAreaToSet) {
 
   areaSelect.innerHTML = html;
 
-  // กรณีเปิดแก้ไขข้อมูลเดิม (ถ้าค่าเดิมไม่ตรงกับชีต จะคงค่าเดิมไว้เฉพาะฟอร์มนี้)
   if (selectedAreaToSet) {
     var exists = Array.from(areaSelect.options).some(opt => opt.value === selectedAreaToSet);
     if (!exists && selectedAreaToSet !== '-') {
@@ -2202,11 +2231,11 @@ function onFormParkChange(selectedAreaToSet) {
   }
 }
 
-function resetDependentFormDropdowns() {
+function resetFormParkAndAreaDropdowns() {
+  var parkSelect = document.getElementById('fParkName');
   var areaSelect = document.getElementById('fArea');
-  if (areaSelect) {
-    areaSelect.innerHTML = '<option value="">-- กรุณาเลือกสวนสาธารณะก่อน --</option>';
-  }
+  if (parkSelect) parkSelect.innerHTML = '<option value="">-- กรุณาเลือกหน่วยงานก่อน --</option>';
+  if (areaSelect) areaSelect.innerHTML = '<option value="">-- กรุณาเลือกสวนสาธารณะก่อน --</option>';
 }
 
 /**
@@ -2256,7 +2285,7 @@ function loadReports() {
 }
 
 /**
- * 🌟 อัปเดต openAddModal ให้รีเซ็ตค่า Dropdowns และ Checkbox
+ * 🌟 อัปเดต openAddModal ให้รองรับกรณี Officer ล็อกอิน (เลือกหน่วยงานและโหลดสวนให้อัตโนมัติ)
  */
 function openAddModal() {
   if (!currentUser.loggedIn) {
@@ -2269,13 +2298,12 @@ function openAddModal() {
   document.getElementById('reportForm').reset();
   document.getElementById('fRowIndex').value = '';
   document.getElementById('fExistingImageId').value = '';
-  
+
   formPendingBase64 = null;
   isFormImageRemoved = false;
   document.getElementById('formImagePreviewContainer').style.display = 'none';
   document.getElementById('formImageHint').style.display = 'none';
 
-  // ซ่อนกล่อง Checkbox สุขภัณฑ์
   var toiletBox = document.getElementById('toiletItemsContainer');
   if (toiletBox) toiletBox.style.display = 'none';
   document.querySelectorAll('input[name="toiletItem"]').forEach(cb => cb.checked = false);
@@ -2284,8 +2312,10 @@ function openAddModal() {
   if (currentUser.role === 'officer') {
     deptSelect.value = currentUser.dept;
     deptSelect.disabled = true;
+    onFormDepartmentChange(); // โหลดสวนเฉพาะของฝ่ายนั้นทันที
   } else {
     deptSelect.disabled = false;
+    resetFormParkAndAreaDropdowns();
   }
 
   document.getElementById('reportFormModal').style.display = 'flex';
