@@ -482,9 +482,10 @@
 
         <div class="form-grid">
           <!-- สวนสาธารณะ (Col C) -->
+          <!-- สวนสาธารณะ (Col C) -->
           <div class="form-group">
             <label><i class="fa-solid fa-tree"></i> สวนสาธารณะ *</label>
-            <select id="fParkName" required class="form-input">
+            <select id="fParkName" required class="form-input" onchange="onFormParkChange()">
               <option value="">-- เลือกสวนสาธารณะ --</option>
             </select>
           </div>
@@ -492,7 +493,7 @@
           <div class="form-group">
             <label><i class="fa-solid fa-map-pin"></i> บริเวณที่พบ *</label>
             <select id="fArea" required class="form-input">
-              <option value="">-- เลือกบริเวณที่พบ --</option>
+              <option value="">-- กรุณาเลือกสวนสาธารณะก่อน --</option>
             </select>
           </div>
         </div>
