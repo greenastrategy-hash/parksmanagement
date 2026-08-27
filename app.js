@@ -218,46 +218,36 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function initMap() {
-  // 1. 🗺️ ชั้นแผนที่ถนนมาตรฐาน (Street / Voyager)
-  var streetLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; OpenStreetMap &copy; CARTO',
-    subdomains: 'abcd',
-    maxZoom: 20
+  // 1. 🗺️ ชั้นแผนที่ถนนมาตรฐาน OpenStreetMap (OSM มาตรฐาน ฟรี 100% ไม่มีลายน้ำ API Key)
+  var osmStandardLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    maxZoom: 19
   });
 
-  // 2. 🛰️ ชั้นภาพถ่ายดาวเทียมมาตรฐานสากลคมชัด (Esri World Imagery)
-  var satelliteBase = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-    attribution: '&copy; Esri, Maxar, Earthstar Geographics',
+  // 2. 🛰️ ชั้นภาพถ่ายดาวเทียมคมชัด (Esri World Imagery มาตรฐานสากล)
+  var satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{x}/{y}', {
+    attribution: '&copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics',
     maxNativeZoom: 18,
-    maxZoom: 20
+    maxZoom: 19
   });
-
-  // 3. 🏷️ ชั้นป้ายกำกับชื่อสถานที่สำคัญและเส้นทาง (CartoDB Labels)
-  var placeLabels = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png', {
-    subdomains: 'abcd',
-    maxZoom: 20
-  });
-
-  // รวมเป็น 1 ชั้นดาวเทียมพร้อมชื่อสถานที่สำคัญ
-  var satelliteGroup = L.layerGroup([satelliteBase, placeLabels]);
 
   map = L.map('map', {
     center: [13.7563, 100.5018],
     zoom: 11.5,
     minZoom: 9.5,
-    maxZoom: 20,
+    maxZoom: 19,
     zoomSnap: 0.1,
     zoomDelta: 0.5,
     zoomControl: false,
-    layers: [streetLayer] // เริ่มต้นด้วยแผนที่ถนน
+    layers: [osmStandardLayer] // เริ่มต้นด้วยแผนที่มาตรฐาน OSM
   });
 
   L.control.zoom({ position: 'topleft' }).addTo(map);
 
   // 🌟 กล่องสลับชั้นแผนที่ (Layer Switcher) ที่มุมขวาบน
   var baseMaps = {
-    "🗺️ แผนที่ถนน": streetLayer,
-    "🛰️ ภาพถ่ายดาวเทียม + สถานที่สำคัญ": satelliteGroup
+    "🗺️ แผนที่มาตรฐาน (OSM)": osmStandardLayer,
+    "🛰️ ภาพถ่ายดาวเทียม": satelliteLayer
   };
   L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map);
 
