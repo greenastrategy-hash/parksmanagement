@@ -474,7 +474,7 @@
           <!-- หน่วยงานผู้รับผิดชอบ (Col B) -->
           <div class="form-group">
             <label><i class="fa-solid fa-building"></i> หน่วยงานผู้รับผิดชอบ *</label>
-            <select id="fDepartment" required class="form-input">
+            <select id="fDepartment" required class="form-input" onchange="onFormDepartmentChange()">
               <option value="">-- เลือกหน่วยงาน --</option>
             </select>
           </div>
@@ -482,11 +482,10 @@
 
         <div class="form-grid">
           <!-- สวนสาธารณะ (Col C) -->
-          <!-- สวนสาธารณะ (Col C) -->
           <div class="form-group">
             <label><i class="fa-solid fa-tree"></i> สวนสาธารณะ *</label>
             <select id="fParkName" required class="form-input" onchange="onFormParkChange()">
-              <option value="">-- เลือกสวนสาธารณะ --</option>
+              <option value="">-- กรุณาเลือกหน่วยงานก่อน --</option>
             </select>
           </div>
           <!-- บริเวณที่พบ (Col D) -->
