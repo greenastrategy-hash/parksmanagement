@@ -452,7 +452,7 @@
     </div>
   </div>
 
-  <!-- Modal: Form Add/Edit (บันทึก / แก้ไขรายการแจ้งชำรุด) -->
+  <!-- Modal: Form Add/Edit (บันทึก / แก้ไขรายการแจ้งชำรุด พร้อมตัวเลือก Dynamic จากชีต) -->
   <div id="reportFormModal" class="modal">
     <div class="modal-content form-card">
       <div class="modal-header">
@@ -464,44 +464,55 @@
         <input type="hidden" id="fExistingImageId">
         
         <div class="form-grid">
+          <!-- หมวดหมู่สถานที่ (Col A) -->
           <div class="form-group">
             <label><i class="fa-solid fa-tag"></i> หมวดหมู่สถานที่ *</label>
-            <select id="fCategory" required class="form-input">
-              <option value="สุขา">สุขา</option>
-              <option value="ลานจอดรถ">ลานจอดรถ</option>
-              <option value="สนามกีฬา">สนามกีฬา</option>
-              <option value="เส้นทางออกกำลังกาย">เส้นทางออกกำลังกาย</option>
-              <option value="สนามเด็กเล่น">สนามเด็กเล่น</option>
-              <option value="เครื่องออกกำลังกายกลางแจ้ง">เครื่องออกกำลังกายกลางแจ้ง</option>
+            <select id="fCategory" required class="form-input" onchange="onFormCategoryChange()">
+              <option value="">-- เลือกหมวดหมู่ --</option>
             </select>
           </div>
+          <!-- หน่วยงานผู้รับผิดชอบ (Col B) -->
           <div class="form-group">
             <label><i class="fa-solid fa-building"></i> หน่วยงานผู้รับผิดชอบ *</label>
             <select id="fDepartment" required class="form-input">
-              <option value="ฝ่ายบริหารจัดการพื้นที่สีเขียว 1">ฝ่ายบริหารจัดการพื้นที่สีเขียว 1</option>
-              <option value="ฝ่ายบริหารจัดการพื้นที่สีเขียว 2">ฝ่ายบริหารจัดการพื้นที่สีเขียว 2</option>
-              <option value="ฝ่ายบริหารจัดการพื้นที่สีเขียว 3">ฝ่ายบริหารจัดการพื้นที่สีเขียว 3</option>
-              <option value="ฝ่ายบริหารจัดการพื้นที่สีเขียว 4">ฝ่ายบริหารจัดการพื้นที่สีเขียว 4</option>
-              <option value="ฝ่ายบริหารจัดการพื้นที่สีเขียว 5">ฝ่ายบริหารจัดการพื้นที่สีเขียว 5</option>
-              <option value="ฝ่ายบริหารจัดการพื้นที่สีเขียว 6">ฝ่ายบริหารจัดการพื้นที่สีเขียว 6</option>
+              <option value="">-- เลือกหน่วยงาน --</option>
             </select>
           </div>
         </div>
 
         <div class="form-grid">
+          <!-- สวนสาธารณะ (Col C) -->
           <div class="form-group">
             <label><i class="fa-solid fa-tree"></i> สวนสาธารณะ *</label>
-            <input type="text" id="fParkName" required placeholder="เช่น สวนลุมพินี, สวนเบญจกิติ" class="form-input">
+            <select id="fParkName" required class="form-input">
+              <option value="">-- เลือกสวนสาธารณะ --</option>
+            </select>
           </div>
+          <!-- บริเวณที่พบ (Col D) -->
           <div class="form-group">
             <label><i class="fa-solid fa-map-pin"></i> บริเวณที่พบ *</label>
-            <input type="text" id="fArea" required placeholder="เช่น ประตู 3, ข้างศาลาแปดเหลี่ยม" class="form-input">
+            <select id="fArea" required class="form-input">
+              <option value="">-- เลือกบริเวณที่พบ --</option>
+            </select>
           </div>
         </div>
 
+        <!-- สิ่งที่ชำรุด / ต้องการปรับปรุง (Col E) -->
         <div class="form-group">
           <label><i class="fa-solid fa-triangle-exclamation"></i> สิ่งที่ชำรุด / ต้องการปรับปรุง *</label>
-          <textarea id="fIssue" required rows="2" placeholder="ระบุรายละเอียดความเสียหาย" class="form-input"></textarea>
+          <select id="fIssueSelect" required class="form-input" onchange="onFormIssueSelectChange()">
+            <option value="">-- เลือกสิ่งที่ชำรุด / ปัญหาที่พบ --</option>
+          </select>
+        </div>
+
+        <!-- 🚻 กล่องตัวเลือกหลายรายการสำหรับ สุขภัณฑ์ห้องน้ำสาธารณะ (Col F) -->
+        <div class="form-group" id="toiletItemsContainer" style="display: none;">
+          <label class="toilet-items-title">
+            <i class="fa-solid fa-restroom text-emerald"></i> ระบุอุปกรณ์สุขภัณฑ์ที่ชำรุด (เลือกได้หลายรายการ) *
+          </label>
+          <div id="toiletItemsList" class="toilet-checkbox-grid">
+            <!-- รายการ Checkbox จะถูกสร้างอัตโนมัติจากข้อมูลชีต -->
+          </div>
         </div>
 
         <div class="form-group">
@@ -538,7 +549,7 @@
           </button>
         </div>
 
-        <!-- ส่วนแนบภาพ: ถ่ายภาพ & เลือกจากคลังภาพ (รองรับมือถือ 100%) -->
+        <!-- ส่วนแนบภาพ -->
         <div class="form-group">
           <label><i class="fa-solid fa-camera"></i> ภาพถ่ายความเสียหาย</label>
           
