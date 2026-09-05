@@ -770,22 +770,22 @@ function createMarkerIcon(maxUrgency, itemCount, category) {
   var iconClass = categoryIcons[category] || defaultCategoryIcon;
   
   var countBadgeHtml = itemCount > 1 
-    ? '<span class="pin-count-badge" style="background-color: #c4b5fd; color: #4c1d95; border: 1.5px solid #ffffff;">+' + itemCount + '</span>' 
+    ? '<span class="pin-count-badge">+' + itemCount + '</span>' 
     : '';
 
   return L.divIcon({
     className: 'custom-pin-wrapper',
     html: '<div class="custom-pin-container">' +
-            '<div class="custom-pin" style="background-color: ' + urgColor.bg + '; border: 2px solid #ffffff;">' +
-              '<span class="custom-pin-inner" style="color: #ffffff;">' +
+            '<div class="custom-pin" style="background-color: ' + urgColor.bg + ';">' +
+              '<span class="custom-pin-inner">' +
                 '<i class="' + iconClass + '"></i>' +
               '</span>' +
             '</div>' +
             countBadgeHtml +
           '</div>',
-    iconSize: [36, 36],
-    iconAnchor: [18, 36],
-    popupAnchor: [0, -36]
+    iconSize: [36, 44],
+    iconAnchor: [18, 42],   // ปลายแหลมของหมุดจะแตะพิกัดบนแผนที่ตรงเป๊ะ
+    popupAnchor: [0, -42]
   });
 }
 
