@@ -1423,3 +1423,59 @@ body {
 #authModal .btn-submit:active {
   transform: scale(0.98);
 }
+
+/* =========================================================
+   📌 Tooltip พรีวิวเหนือหมุด (สไตล์เวอร์ชันแรก สะอาดตา มีลูกศรชี้ลงหมุด)
+   ========================================================= */
+.leaflet-tooltip.marker-preview-tooltip {
+  background: rgba(0, 116, 75, 0.94) !important; /* สีเขียวเข้มโปร่งแสงตามภาพ */
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 14px !important;
+  color: #ffffff !important;
+  font-family: 'Kanit', sans-serif !important;
+  padding: 12px 18px !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35) !important;
+  white-space: normal !important;
+  line-height: 1.4 !important;
+  min-width: 250px;
+  max-width: 320px;
+}
+
+/* 🔻 ลูกศรชี้ลงมายังตัวหมุดอย่างแม่นยำ */
+.leaflet-tooltip-top.marker-preview-tooltip::before {
+  border-top-color: rgba(0, 116, 75, 0.94) !important;
+  border-width: 9px 9px 0 !important;
+  bottom: -9px !important;
+  margin-left: -9px !important;
+}
+
+/* จัดสัดส่วนตัวหนังสือด้านใน Tooltip */
+.tooltip-park-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 6px;
+  line-height: 1.25;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  padding-bottom: 4px;
+}
+
+.tooltip-info-row {
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.95);
+  margin-top: 3px;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.tooltip-info-row b {
+  color: #ffffff;
+}
+
+.tooltip-urgency-highlight {
+  font-weight: 700;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
