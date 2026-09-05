@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>ระบบติดตามและแจ้งชำรุดเสียหาย</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌳</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -46,7 +46,7 @@
       
       <div class="header-actions" id="headerActions">
         <!-- แถวบน: การเข้าถึงระบบและตารางข้อมูล -->
-        <div class="header-controls-row">
+        <div class="header-controls-row header-controls-row-1">
           <div id="userBadge" class="user-badge" style="display: none;">
             <i class="fa-solid fa-circle-user"></i> <span id="userBadgeText">-</span>
           </div>
@@ -65,7 +65,7 @@
         </div>
 
         <!-- แถวล่าง: ปุ่มตารางข้อมูล + ตัวกรองพื้นที่และหมวดหมู่ -->
-        <div class="header-controls-row">
+        <div class="header-controls-row header-controls-row-2">
           <button type="button" id="btnTable" class="btn-action btn-table" onclick="openTableModal()">
             <i class="fa-solid fa-table-list"></i> ตารางข้อมูล
           </button>
@@ -268,7 +268,7 @@
     </div>
   </div>
 
-  <!-- Modal: Detail (พร้อมแสดงวัน-เวลา, ระยะเวลารอ, กล่องคำอธิบายความเร่งด่วน และตรึง Footer) -->
+  <!-- Modal: Detail (พร้อมปุ่มก่อนหน้า/ถัดไปที่ตรึงด้านล่างอย่างถูกต้อง) -->
   <div id="detailModal" class="modal" style="display: none;">
     <div class="modal-content">
       <div class="modal-header">
@@ -279,6 +279,7 @@
         <button type="button" class="close-btn" onclick="closeModal('detailModal')">&times;</button>
       </div>
       
+      <!-- ส่วนบอดี้เลื่อนได้อิสระ -->
       <div class="modal-body scrollable-body">
         <!-- แถบแสดงสถานะปรับปรุงเสร็จสิ้น -->
         <div id="resolvedStatusBanner" class="resolved-status-banner" style="display: none;">
@@ -389,8 +390,8 @@
         </div>
       </div><!-- จบ .modal-body -->
 
-      <!-- แถบปุ่มก่อนหน้า-ถัดไป ตรึงอยู่ด้านล่างภายในการ์ด ไม่หลุดลอย -->
-      <div class="modal-footer" id="modalFooterNav">
+      <!-- 📌 แถบปุ่มก่อนหน้า-ถัดไป ต้องอยู่นอก .modal-body และอยู่ภายใน .modal-content เพื่อตรึงล่าง 100% -->
+      <div class="modal-footer" id="modalFooterNav" style="display: none;">
         <button type="button" class="nav-btn" id="btnPrev" onclick="prevReportItem()">
           <i class="fa-solid fa-chevron-left"></i> ก่อนหน้า
         </button>
