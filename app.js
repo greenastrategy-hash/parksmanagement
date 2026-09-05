@@ -1347,10 +1347,25 @@ function drawBMAData(data) {
 }
 
 function openAuthModal() {
+  var modal = document.getElementById('authModal');
+  if (!modal) {
+    console.error('ไม่พบอิลิเมนต์ authModal ในหน้าเว็บ');
+    return;
+  }
+  
   var input = document.getElementById('authCodeInput');
-  input.value = '';
-  document.getElementById('authModal').style.display = 'flex';
-  setTimeout(() => { try { input.focus(); } catch(e) {} }, 100);
+  if (input) {
+    input.value = '';
+  }
+  
+  // บังคับแสดงหน้าต่าง Modal
+  modal.style.display = 'flex';
+  
+  setTimeout(function() {
+    if (input) {
+      try { input.focus(); } catch(e) {}
+    }
+  }, 100);
 }
 
 function handleAuthSubmit(e) {
