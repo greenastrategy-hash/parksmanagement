@@ -1982,16 +1982,18 @@ function readFileAsBase64(file, callback) {
 function onResolveButtonClick() {
   if (!currentActiveGroup || !currentActiveGroup.items.length) return;
   var item = currentActiveGroup.items[currentActiveIndex];
-  
+
   pendingResolveItem = item;
   pendingResolveBase64 = null;
 
   var summaryElem = document.getElementById('resolveSummaryInfo');
   if (summaryElem) {
     summaryElem.innerHTML = 
-      '<strong>' + escapeHTML(item.parkName) + '</strong> (' + escapeHTML(item.category) + ')<br/>' +
-      'จุดเกิดเหตุ: ' + escapeHTML(item.area) + '<br/>' +
-      'ปัญหา: ' + escapeHTML(item.issue);
+      '<div><i class="fa-solid fa-tree"></i> <b>' + escapeHTML(item.parkName || '-') + '</b> (' + escapeHTML(item.category || '-') + ')</div>' +
+      '<div style="font-size: 0.82rem; color: #475569; margin-top: 2px;"><i class="fa-solid fa-map-pin"></i> <b>จุดเกิดเหตุ:</b> ' + escapeHTML(item.area || '-') + '</div>' +
+      '<div style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed #bbf7d0; font-size: 0.84rem;">' +
+        '<b>ปัญหาที่พบ:</b> <span style="color: #b91c1c; font-weight: 500;">' + escapeHTML(item.issue || '-') + '</span>' +
+      '</div>';
   }
 
   var actionInput = document.getElementById('resolveActionDetail');
