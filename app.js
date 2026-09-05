@@ -1982,6 +1982,7 @@ function readFileAsBase64(file, callback) {
 function onResolveButtonClick() {
   if (!currentActiveGroup || !currentActiveGroup.items.length) return;
   var item = currentActiveGroup.items[currentActiveIndex];
+  if (!item) return;
 
   pendingResolveItem = item;
   pendingResolveBase64 = null;
@@ -2009,11 +2010,18 @@ function onResolveButtonClick() {
   var previewImg = document.getElementById('resolveImagePreview');
   if (previewImg) previewImg.src = '';
 
-  document.getElementById('resolveConfirmModal').style.display = 'flex';
+  // 🚀 ตรวจสอบว่ามี modal ก่อนสั่งเปิด
+  var modal = document.getElementById('resolveConfirmModal');
+  if (modal) {
+    modal.style.setProperty('display', 'flex', 'important');
+  } else {
+    console.error('ไม่พบอิลิเมนต์ #resolveConfirmModal ใน HTML');
+  }
 }
 
 function closeResolveConfirmModal() {
-  document.getElementById('resolveConfirmModal').style.display = 'none';
+  var modal = document.getElementById('resolveConfirmModal');
+  if (modal) modal.style.display = 'none';
   pendingResolveItem = null;
   pendingResolveBase64 = null;
 }
