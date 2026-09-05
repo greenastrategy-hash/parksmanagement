@@ -1117,7 +1117,7 @@ function displayCurrentReportItem() {
     imgElem.style.display = 'block';
     if (fallback) fallback.style.display = 'none';
   } else {
-    imgElem.src = 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\'/%3E';
+    imgElem.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E";
     imgElem.style.display = 'none';
     if (fallback) fallback.style.display = 'flex';
   }
@@ -1133,16 +1133,19 @@ function displayCurrentReportItem() {
   document.getElementById('modalPaginationBadge').innerText = (currentActiveIndex + 1) + '/' + total;
   document.getElementById('navStatusText').innerText = 'รายการที่ ' + (currentActiveIndex + 1) + ' จากทั้งหมด ' + total + ' รายการในพิกัดนี้';
 
+  // 📌 ตรึงแถบปุ่มก่อนหน้า-ถัดไป ให้เปิดแสดงผลเป็น Flex เสมอเมื่อมีมากกว่า 1 รายการ
   var footerNav = document.getElementById('modalFooterNav');
   var btnPrev = document.getElementById('btnPrev');
   var btnNext = document.getElementById('btnNext');
 
-  if (total > 1) {
-    footerNav.style.display = 'flex';
-    btnPrev.disabled = (currentActiveIndex === 0);
-    btnNext.disabled = (currentActiveIndex === total - 1);
-  } else {
-    footerNav.style.display = 'none';
+  if (footerNav) {
+    if (total > 1) {
+      footerNav.style.setProperty('display', 'flex', 'important');
+      btnPrev.disabled = (currentActiveIndex === 0);
+      btnNext.disabled = (currentActiveIndex === total - 1);
+    } else {
+      footerNav.style.setProperty('display', 'none', 'important');
+    }
   }
 }
 
