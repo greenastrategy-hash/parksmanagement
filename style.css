@@ -1291,3 +1291,30 @@ body {
   color: #0f172a;
   padding: 0 4px;
 }
+
+/* ป้ายความเร่งด่วนในตารางและ Modal: ทรงแคปซูล ขนาดพอดี ไม่แตกแถว */
+.table-urgency-badge, .modal-urgency-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 10px !important;
+  border-radius: 20px !important;
+  font-size: 0.78rem !important;
+  font-weight: 600 !important;
+  white-space: nowrap !important;
+  line-height: 1.2;
+}
+
+/* กล่องคำอธิบายระดับความเร่งด่วนท้าย Modal */
+.urgency-legend-block {
+  background: #f8fafc !important;
+  border: 1px dashed #cbd5e1 !important;
+  border-radius: 10px !important;
+  padding: 10px 14px !important;
+  margin-top: 4px;
+}
+
+.urgency-legend-content {
+  font-size: 0.84rem;
+  line-height: 1.4;
+}
