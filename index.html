@@ -403,13 +403,72 @@
     </div><!-- จบ .modal-content -->
   </div><!-- จบ #detailModal -->
 
-  id="resolveConfirmModal
+  <!-- Modal: Resolve Action (บันทึกการปรับปรุงเสร็จสิ้น) -->
+  <div id="resolveConfirmModal" class="modal" style="display: none;">
+    <div class="modal-content resolve-modal-card">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <h3><i class="fa-solid fa-circle-check"></i> บันทึกการปรับปรุงเสร็จสิ้น</h3>
+        </div>
+        <button type="button" class="close-btn" onclick="closeResolveConfirmModal()">&times;</button>
+      </div>
+      
+      <div class="modal-body resolve-modal-body">
+        <div id="resolveSummaryInfo" class="resolve-summary-card"></div>
+        
+        <div class="form-group">
+          <label class="form-label-bold">
+            <i class="fa-solid fa-pen-to-square text-emerald"></i> วิธีการดำเนินการแก้ไข / รายละเอียดการซ่อมแซม <span class="text-danger">*</span>
+          </label>
+          <textarea id="resolveActionDetail" class="form-input resolve-textarea" rows="3" placeholder="ระบุรายละเอียด เช่น ดำเนินการเปลี่ยนอุปกรณ์ใหม่, ซ่อมแซมเรียบร้อยแล้ว..." required></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label-bold">
+            <i class="fa-solid fa-camera text-emerald"></i> ภาพถ่ายหลังการปรับปรุง (ถ้ามี)
+          </label>
+          
+          <div class="image-upload-btn-group">
+            <label class="btn-img-action btn-camera">
+              <i class="fa-solid fa-camera"></i> ถ่ายภาพ
+              <input type="file" id="resolveCameraInput" accept="image/jpeg,image/png,image/webp,image/*" capture="environment" onchange="handleResolveImageSelected(event)" class="native-hidden-input">
+            </label>
+            <label class="btn-img-action btn-gallery">
+              <i class="fa-solid fa-images"></i> เลือกจากคลังภาพ
+              <input type="file" id="resolveGalleryInput" accept="image/jpeg,image/png,image/webp,image/*" onchange="handleResolveImageSelected(event)" class="native-hidden-input">
+            </label>
+          </div>
+
+          <div id="resolveImagePreviewBox" class="image-preview-wrapper" style="display: none;">
+            <div class="preview-header">
+              <span><i class="fa-regular fa-image"></i> ตัวอย่างภาพหลังปรับปรุง:</span>
+              <button type="button" class="btn-remove-preview" onclick="clearResolveImagePreview()" title="ลบภาพนี้">
+                <i class="fa-solid fa-trash-can"></i> ลบภาพ
+              </button>
+            </div>
+            <img id="resolveImagePreview" src="" alt="ภาพหลังปรับปรุง" class="image-preview-box">
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer resolve-modal-footer">
+        <button type="button" class="btn-resolve-cancel" onclick="closeResolveConfirmModal()">
+          ยกเลิก
+        </button>
+        <button type="button" id="btnSubmitResolve" class="btn-resolve-submit" onclick="submitResolveAction()">
+          <i class="fa-solid fa-check"></i> บันทึกเสร็จสิ้น
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- Modal: Auth (ล็อกอินเจ้าหน้าที่) -->
   <div id="authModal" class="modal" style="display: none;">
     <div class="modal-content auth-card">
       <div class="modal-header">
-        <h3><i class="fa-solid fa-lock"></i> ยืนยันรหัสเจ้าหน้าที่</h3>
+        <div class="modal-title-group">
+          <h3><i class="fa-solid fa-lock"></i> ยืนยันรหัสเจ้าหน้าที่</h3>
+        </div>
         <button type="button" class="close-btn" onclick="closeModal('authModal')">&times;</button>
       </div>
       <form onsubmit="handleAuthSubmit(event)" class="modal-body form-body">
@@ -428,7 +487,9 @@
   <div id="reportFormModal" class="modal" style="display: none;">
     <div class="modal-content form-card">
       <div class="modal-header">
-        <h3 id="formModalTitle"><i class="fa-solid fa-plus-circle"></i> บันทึกรายการแจ้งชำรุด</h3>
+        <div class="modal-title-group">
+          <h3 id="formModalTitle"><i class="fa-solid fa-plus-circle"></i> บันทึกรายการแจ้งชำรุด</h3>
+        </div>
         <button type="button" class="close-btn" onclick="closeModal('reportFormModal')">&times;</button>
       </div>
       <form id="reportForm" onsubmit="handleFormSubmit(event)" class="modal-body form-body scrollable-body">
