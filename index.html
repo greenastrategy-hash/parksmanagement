@@ -45,19 +45,15 @@
       </button>
       
       <div class="header-actions" id="headerActions">
-        <!-- แถวที่ 1: การเข้าถึงระบบและตารางข้อมูล -->
         <div class="header-controls-row">
           <div id="userBadge" class="user-badge" style="display: none;">
             <i class="fa-solid fa-circle-user"></i> <span id="userBadgeText">-</span>
           </div>
-          <button type="button" id="btnTable" class="btn-action btn-table" onclick="openTableModal()">
-            <i class="fa-solid fa-table-list"></i> ตารางข้อมูล
+          <button type="button" id="btnAddReport" class="btn-action btn-add" onclick="openAddModal()" style="display: none;">
+            <i class="fa-solid fa-plus"></i> เพิ่มรายการ
           </button>
           <button type="button" id="btnDashboard" class="btn-action btn-dashboard" onclick="openDashboardModal()">
             <i class="fa-solid fa-chart-pie"></i> แดชบอร์ดสถิติ
-          </button>
-          <button type="button" id="btnAddReport" class="btn-action btn-add" onclick="openAddModal()" style="display: none;">
-            <i class="fa-solid fa-plus"></i> เพิ่มรายการ
           </button>
           <button type="button" id="btnLogin" class="btn-action btn-login" onclick="openAuthModal()">
             <i class="fa-solid fa-key"></i> เจ้าหน้าที่
@@ -66,9 +62,11 @@
             <i class="fa-solid fa-right-from-bracket"></i> ออก
           </button>
         </div>
-
-        <!-- แถวที่ 2: ตัวกรองพื้นที่และหมวดหมู่ -->
+      
         <div class="header-controls-row">
+          <button type="button" id="btnTable" class="btn-action btn-table" onclick="openTableModal()">
+            <i class="fa-solid fa-table-list"></i> ตารางข้อมูล
+          </button>
           <select id="departmentFilter" class="header-filter-select" onchange="onDepartmentFilterChange()">
             <option value="all">🏢 ทุกฝ่าย</option>
             <option value="ฝ่ายบริหารจัดการพื้นที่สีเขียว 1">ฝบข.1</option>
