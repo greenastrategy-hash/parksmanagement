@@ -300,11 +300,20 @@ function onDepartmentFilterChange() {
 }
 
 function openTableModal() {
+  var modal = document.getElementById('tableModal');
+  if (!modal) return;
+
   var searchInput = document.getElementById('tableSearchInput');
   if (searchInput) searchInput.value = '';
   tableCurrentPage = 1;
-  renderTableWithCurrentFilters();
-  document.getElementById('tableModal').style.display = 'flex';
+
+  // 🚀 1. เปิดหน้าต่างขึ้นมาทันทีในเฟรมแรก
+  modal.style.display = 'flex';
+
+  // 🚀 2. ให้เบราว์เซอร์เรนเดอร์ข้อมูลตารางในเฟรมถัดไปทันที (ลื่นไหล ไม่สะดุด)
+  requestAnimationFrame(function() {
+    renderTableWithCurrentFilters();
+  });
 }
 
 function switchTableTab(tab) {
@@ -966,8 +975,15 @@ function filterMarkers() {
 function openDetailModal(group, index) {
   currentActiveGroup = group;
   currentActiveIndex = index;
+  
+  var modal = document.getElementById('detailModal');
+  if (!modal) return;
+
+  // เปิดหน้าต่างทันที
+  modal.style.display = 'flex';
+
+  // อัปเดตข้อมูลข้างใน
   displayCurrentReportItem();
-  document.getElementById('detailModal').style.display = 'flex';
 }
 
 // ฟังก์ชันแปลงข้อความวัน-เวลา (รองรับ dd/MM/yyyy HH:mm:ss หรือ dd/MM/yyyy HH:mm ทั้ง ค.ศ. และ พ.ศ.)
