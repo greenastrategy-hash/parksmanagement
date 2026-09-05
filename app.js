@@ -345,7 +345,18 @@ function renderTableWithCurrentFilters() {
   document.getElementById('tabCountActive').innerText = filteredActive.length;
   document.getElementById('tabCountResolved').innerText = filteredResolved.length;
 
-  currentFilteredTableData = (currentTableTab === 'active') ? filteredActive : filteredResolved;
+  var targetData = (currentTableTab === 'active') ? filteredActive : filteredResolved;
+
+  // ⚡ จัดเรียงลำดับความเร่งด่วนจากมากไปหาน้อย (5 -> 1)
+  currentFilteredTableData = targetData.slice().sort(function(a, b) {
+    var urgA = parseInt(a.urgency, 10) || 1;
+    var urgB = parseInt(b.urgency, 10) || 1;
+    if (urgB !== urgA) {
+      return urgB - urgA;
+    }
+    return (b.rowIndex || 0) - (a.rowIndex || 0);
+  });
+
   displayTableRows(currentFilteredTableData);
 }
 
@@ -373,7 +384,7 @@ function displayTableRows(dataList) {
   if (!tbody || !thead) return;
 
   var isResolvedTab = (currentTableTab === 'resolved');
-  var totalCount = dataList.length;
+  var totalCount = (dataList || []).length;
   badge.innerText = totalCount + ' รายการ';
 
   // หัวตาราง
@@ -415,14 +426,25 @@ function displayTableRows(dataList) {
     return;
   }
 
-  // 🚀 คัดเฉพาะหน้าปัจจุบัน (Pagination) เพื่อให้ตารางเปิดได้ทันทีใน 0.05 วินาที
+  // ⚡ จัดเรียงลำดับความเร่งด่วนจากมากไปหาน้อย (ระดับ 5 -> 1)
+  // หากความเร่งด่วนเท่ากัน ให้แถวใหม่อยู่ด้านบน
+  var sortedList = (dataList || []).slice().sort(function(a, b) {
+    var urgA = parseInt(a.urgency, 10) || 1;
+    var urgB = parseInt(b.urgency, 10) || 1;
+    if (urgB !== urgA) {
+      return urgB - urgA; // 5 -> 1
+    }
+    return (b.rowIndex || 0) - (a.rowIndex || 0);
+  });
+
+  // คัดข้อมูลตาม Pagination
   var totalPages = Math.ceil(totalCount / tablePageSize);
   if (tableCurrentPage > totalPages) tableCurrentPage = totalPages;
   if (tableCurrentPage < 1) tableCurrentPage = 1;
 
   var startIndex = (tableCurrentPage - 1) * tablePageSize;
   var endIndex = Math.min(startIndex + tablePageSize, totalCount);
-  var pageItems = dataList.slice(startIndex, endIndex);
+  var pageItems = sortedList.slice(startIndex, endIndex);
 
   var htmlRows = [];
 
@@ -431,7 +453,6 @@ function displayTableRows(dataList) {
     var actualIndex = startIndex + i;
     var urgColor = getUrgencyColor(item.urgency);
 
-    // 🚀 เพิ่ม loading="lazy" และ decoding="async" ไม่ให้บล็อกการแสดงผลของตาราง
     var imgHtml = item.imageUrl && item.imageId
       ? '<img src="' + escapeHTML(item.imageUrl) + '" class="table-img-thumb" loading="lazy" decoding="async" title="คลิกดูภาพขยาย" onclick="viewDetailFromTable(' + actualIndex + ')" onerror="this.style.display=\'none\'">' 
       : '<i class="fa-regular fa-image table-no-img"></i>';
@@ -467,7 +488,6 @@ function displayTableRows(dataList) {
         '</td>' +
       '</tr>');
     } else {
-      // ปรับให้แสดงสั้นกระชับ สวยงาม ไม่ล้นตาราง
       var urgencyBadgeHtml = '<span class="table-urgency-badge" style="background-color:' + urgColor.bg + '; color:' + urgColor.text + '; border: 1px solid ' + urgColor.border + ';">' +
                                'ระดับ ' + (item.urgency || 1) +
                              '</span>';
@@ -506,7 +526,7 @@ function displayTableRows(dataList) {
 
   tbody.innerHTML = htmlRows.join('');
 
-  // แถบควบคุมด้านล่าง (Pagination Bar)
+  // แถบควบคุม Pagination
   summary.innerHTML = 
     '<div class="table-pagination-controls">' +
       '<span>แสดง ' + (startIndex + 1) + ' - ' + endIndex + ' จากทั้งหมด <b>' + totalCount + '</b> รายการ</span>' +
