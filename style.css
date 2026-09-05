@@ -1151,7 +1151,7 @@ body {
 
 /* =========================================================
    12. Responsive สำหรับหน้าจอมือถือ (<= 768px)
-       (แก้ปัญหาเลื่อนไม่สุด & แสดงผล Footer ตรึงล่าง 100%)
+       (แก้ปัญหาเลื่อนไม่สุด, ตรึง Footer ล่างสุด 100% & ปรับหน้าต่างล็อกอินสมดุล)
    ========================================================= */
 @media (max-width: 768px) {
   .app-header {
@@ -1227,8 +1227,8 @@ body {
     flex-shrink: 0;
   }
 
-  /* 🌟 หน้าต่าง Modal บนมือถือ: ปรับไม่ให้โดน Address bar บีบ และเลื่อนได้จนสุด */
-  .modal {
+  /* 🌟 หน้าต่าง Modal เต็มจอ (ยกเว้นหน้าต่างล็อกอิน authModal) */
+  .modal:not(#authModal) {
     padding: 0 !important;
     align-items: flex-end !important;
   }
@@ -1236,8 +1236,7 @@ body {
   #detailModal .modal-content,
   #reportFormModal .modal-content,
   #tableModal .modal-content,
-  #dashboardModal .modal-content,
-  #authModal .modal-content {
+  #dashboardModal .modal-content {
     width: 100vw !important;
     max-width: 100vw !important;
     height: 100% !important;
@@ -1281,6 +1280,45 @@ body {
     position: relative !important;
   }
 
+  /* 🔑 ปรับแต่ง Auth Modal (หน้าต่างล็อกอิน) บนมือถือให้อยู่ตรงกลางจอ กะทัดรัด สมส่วน ไม่ยืดเต็มจอ */
+  #authModal.modal {
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 16px !important;
+  }
+
+  #authModal .modal-content.auth-card {
+    width: 90% !important;
+    max-width: 360px !important;
+    height: auto !important;
+    max-height: none !important;
+    border-radius: 16px !important;
+    margin: auto !important;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.3) !important;
+    overflow: hidden !important;
+  }
+
+  #authModal .modal-body.form-body {
+    padding: 20px 18px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 14px !important;
+  }
+
+  #authModal .form-input {
+    height: 44px !important;
+    font-size: 1.1rem !important;
+    letter-spacing: 3px !important;
+    text-align: center !important;
+    border-radius: 10px !important;
+  }
+
+  #authModal .btn-submit {
+    height: 42px !important;
+    border-radius: 10px !important;
+    font-size: 0.92rem !important;
+  }
+
   .modal-images-grid.is-compare {
     grid-template-columns: 1fr !important;
   }
@@ -1299,4 +1337,89 @@ body {
 
   .btn-map-focus { bottom: 20px; left: 10px; }
   .btn-map-locate { bottom: 64px; left: 10px; }
+}
+
+/* =========================================================
+   🔑 ปรับปรุง Auth Modal (หน้าต่างล็อกอินให้กะทัดรัด สมดุล กึ่งกลางจอ)
+   ========================================================= */
+#authModal .modal-content.auth-card {
+  max-width: 360px !important;
+  width: 90% !important;
+  height: auto !important;
+  max-height: none !important;
+  border-radius: 16px !important;
+  margin: auto !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25) !important;
+  overflow: hidden !important;
+}
+
+#authModal .modal-header {
+  padding: 14px 18px;
+  background: var(--green-gradient, linear-gradient(135deg, #00744b, #00a86b));
+}
+
+#authModal .modal-body.form-body {
+  padding: 24px 20px !important;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: #ffffff;
+}
+
+.auth-hint {
+  font-size: 0.88rem;
+  color: #475569;
+  text-align: center;
+  line-height: 1.5;
+  margin: 0;
+  font-weight: 400;
+}
+
+/* ช่องกรอกรหัส: จัดกึ่งกลาง ตัวใหญ่ นุ่มนวล */
+#authModal .form-input {
+  width: 100%;
+  height: 46px;
+  border-radius: 10px;
+  border: 1.5px solid #cbd5e1;
+  text-align: center;
+  font-size: 1.1rem;
+  letter-spacing: 3px;
+  font-family: 'Kanit', sans-serif;
+  color: #0f172a;
+  background: #f8fafc;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+#authModal .form-input:focus {
+  border-color: var(--primary-green, #00744b);
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(0, 116, 75, 0.15);
+}
+
+/* ปุ่มกดยืนยันรหัส */
+#authModal .btn-submit {
+  width: 100%;
+  height: 44px;
+  border-radius: 10px;
+  background: var(--primary-green, #00744b);
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(0, 116, 75, 0.25);
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+#authModal .btn-submit:hover {
+  background: var(--dark-green, #004d32);
+}
+
+#authModal .btn-submit:active {
+  transform: scale(0.98);
 }
