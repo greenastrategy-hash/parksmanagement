@@ -349,12 +349,20 @@
               <span class="row-label"><i class="fa-solid fa-gauge-high"></i> ระดับความเร่งด่วน:</span>
               <span class="row-value" id="mUrgency">-</span>
             </div>
+            <!-- 🌟 เพิ่มส่วนแสดงวันเวลาที่แจ้ง และระยะเวลาที่รอปรับปรุง -->
+            <div class="block-row" id="mReportedAtRow">
+              <span class="row-label"><i class="fa-regular fa-clock"></i> วัน-เวลาที่แจ้ง:</span>
+              <span class="row-value font-bold" id="mReportedAt">-</span>
+            </div>
+            <div class="block-row" id="mDurationRow">
+              <span class="row-label" id="mDurationLabel"><i class="fa-solid fa-hourglass-half"></i> ระยะเวลารอปรับปรุง:</span>
+              <span class="row-value font-bold text-amber" id="mDuration">-</span>
+            </div>
             <div class="block-row" id="mNotesRow">
               <span class="row-label"><i class="fa-solid fa-comment-dots"></i> หมายเหตุเดิม:</span>
               <span class="row-value text-muted" id="mNotes">-</span>
             </div>
           </div>
-        </div>
 
         <div id="adminActionsContainer" class="admin-actions-container" style="display: none;">
           <button class="btn-resolve-action" onclick="onResolveButtonClick()">
