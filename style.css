@@ -1153,9 +1153,13 @@ body {
        (ปรับให้แสดงผลเต็มจอ สวยงาม และตรึง Footer ล่างสุดเสมอ)
    ========================================================= */
 @media (max-width: 768px) {
-  .app-header {
-    padding: 8px 12px;
+  /* แทนที่ด้วยชื่อคลาสหรือไอดีจริงของปุ่มคุณ */
+  .prev-btn, .next-btn, .pagination-container {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
   }
+}
 
   .header-container {
     flex-wrap: wrap;
