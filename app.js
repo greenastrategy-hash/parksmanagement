@@ -18,6 +18,9 @@ var formPendingBase64 = null;
 var isFormImageRemoved = false;
 var pendingResolveItem = null;
 var pendingResolveBase64 = null;
+// ตัวแปรควบคุมการแบ่งหน้าเพื่อความลื่นไหลระดับสูง
+var tableCurrentPage = 1;
+var tablePageSize = 30; // แสดงครั้งละ 30 แถวเพื่อไม่ให้ DOM หนักเครื่อง
 
 var currentUser = {
   loggedIn: false,
@@ -299,12 +302,14 @@ function onDepartmentFilterChange() {
 function openTableModal() {
   var searchInput = document.getElementById('tableSearchInput');
   if (searchInput) searchInput.value = '';
+  tableCurrentPage = 1;
   renderTableWithCurrentFilters();
   document.getElementById('tableModal').style.display = 'flex';
 }
 
 function switchTableTab(tab) {
   currentTableTab = tab;
+  tableCurrentPage = 1;
   var btnActive = document.getElementById('tabBtnActive');
   var btnResolved = document.getElementById('tabBtnResolved');
   var searchInput = document.getElementById('tableSearchInput');
@@ -330,7 +335,6 @@ function renderTableWithCurrentFilters() {
   if (filters.park !== 'all') filteredActive = filteredActive.filter(d => d.parkName === filters.park);
   if (filters.category !== 'all') filteredActive = filteredActive.filter(d => d.category === filters.category);
   if (filters.urgency !== 'all') filteredActive = filteredActive.filter(d => d.urgency === parseInt(filters.urgency, 10));
-  filteredActive.sort((a, b) => (parseInt(b.urgency, 10) || 1) - (parseInt(a.urgency, 10) || 1));
 
   var filteredResolved = rawResolvedData;
   if (filters.department !== 'all') filteredResolved = filteredResolved.filter(d => d.department === filters.department);
@@ -369,11 +373,10 @@ function displayTableRows(dataList) {
   if (!tbody || !thead) return;
 
   var isResolvedTab = (currentTableTab === 'resolved');
-  badge.innerText = dataList.length + ' รายการ';
-  summary.innerText = isResolvedTab 
-    ? 'แสดงประวัติปรับปรุงเสร็จสิ้น ' + dataList.length + ' รายการ'
-    : 'แสดงรายการรอปรับปรุง ' + dataList.length + ' รายการ (เรียงตามระดับความเร่งด่วน 5 ➔ 1)';
+  var totalCount = dataList.length;
+  badge.innerText = totalCount + ' รายการ';
 
+  // หัวตาราง
   if (isResolvedTab) {
     thead.innerHTML = '<tr>' +
                         '<th style="width: 40px; text-align: center;">#</th>' +
@@ -383,9 +386,9 @@ function displayTableRows(dataList) {
                         '<th style="width: 90px;">หมวดหมู่</th>' +
                         '<th style="min-width: 140px;">สิ่งที่ปรับปรุง</th>' +
                         '<th style="min-width: 150px;">วิธีการแก้ไข</th>' +
-                        '<th style="width: 60px; text-align: center;">ก่อน/หลัง</th>' +
+                        '<th style="width: 60px; text-align: center;">รูปภาพ</th>' +
                         '<th style="width: 110px;">วันที่แจ้ง</th>' +
-                        '<th style="width: 120px;">วันที่แล้วเสร็จ (ใช้เวลา)</th>' +
+                        '<th style="width: 130px;">วันที่เสร็จ (ใช้เวลา)</th>' +
                         '<th style="width: 90px;">ผู้ดำเนินการ</th>' +
                         '<th style="width: 65px; text-align: center;">ดูข้อมูล</th>' +
                       '</tr>';
@@ -398,33 +401,41 @@ function displayTableRows(dataList) {
                         '<th style="width: 100px;">หมวดหมู่</th>' +
                         '<th style="min-width: 160px;">สิ่งที่ชำรุด / ปัญหา</th>' +
                         '<th style="width: 115px; text-align: center;">ความเร่งด่วน</th>' +
-                        '<th style="width: 125px;">วันที่แจ้ง / รอดำเนินการ</th>' +
-                        '<th style="width: 65px; text-align: center;">รูปภาพ</th>' +
+                        '<th style="width: 135px;">วันที่แจ้ง / รอดำเนินการ</th>' +
+                        '<th style="width: 60px; text-align: center;">รูปภาพ</th>' +
                         '<th style="width: 110px;">หมายเหตุ</th>' +
                         '<th style="width: 75px; text-align: center;">จัดการ</th>' +
                       '</tr>';
   }
 
-  if (dataList.length === 0) {
+  if (totalCount === 0) {
     var totalColspan = isResolvedTab ? 12 : 11;
     tbody.innerHTML = '<tr><td colspan="' + totalColspan + '" class="text-center py-4 text-muted"><i class="fa-regular fa-circle-check"></i> ไม่พบข้อมูลในแท็บนี้ตามเงื่อนไขตัวกรอง</td></tr>';
+    summary.innerHTML = 'แสดง 0 รายการ';
     return;
   }
 
-  var html = '';
-  for (var i = 0; i < dataList.length; i++) {
-    var item = dataList[i];
+  // 🚀 คัดเฉพาะหน้าปัจจุบัน (Pagination) เพื่อให้ตารางเปิดได้ทันทีใน 0.05 วินาที
+  var totalPages = Math.ceil(totalCount / tablePageSize);
+  if (tableCurrentPage > totalPages) tableCurrentPage = totalPages;
+  if (tableCurrentPage < 1) tableCurrentPage = 1;
+
+  var startIndex = (tableCurrentPage - 1) * tablePageSize;
+  var endIndex = Math.min(startIndex + tablePageSize, totalCount);
+  var pageItems = dataList.slice(startIndex, endIndex);
+
+  var htmlRows = [];
+
+  for (var i = 0; i < pageItems.length; i++) {
+    var item = pageItems[i];
+    var actualIndex = startIndex + i;
     var urgColor = getUrgencyColor(item.urgency);
 
+    // 🚀 เพิ่ม loading="lazy" และ decoding="async" ไม่ให้บล็อกการแสดงผลของตาราง
     var imgHtml = item.imageUrl && item.imageId
-      ? '<img src="' + escapeHTML(item.imageUrl) + '" class="table-img-thumb" title="คลิกดูภาพขยาย" onclick="viewDetailFromTable(' + i + ')" onerror="this.style.display=\'none\'">' 
+      ? '<img src="' + escapeHTML(item.imageUrl) + '" class="table-img-thumb" loading="lazy" decoding="async" title="คลิกดูภาพขยาย" onclick="viewDetailFromTable(' + actualIndex + ')" onerror="this.style.display=\'none\'">' 
       : '<i class="fa-regular fa-image table-no-img"></i>';
 
-    var urgencyBadgeHtml = '<span class="table-urgency-badge" style="background-color:' + urgColor.bg + '; color:' + urgColor.text + ';">' +
-                             escapeHTML(urgencyLabels[item.urgency] || ('ระดับ ' + item.urgency)) +
-                           '</span>';
-
-    // คำนวณระยะเวลา
     var durationInfo = (typeof formatDurationTime === 'function' && item.reportedAt && item.reportedAt !== '-')
       ? formatDurationTime(item.reportedAt, isResolvedTab ? item.completedDate : null)
       : null;
@@ -434,76 +445,120 @@ function displayTableRows(dataList) {
         ? '<div style="font-size: 0.72rem; color: #047857; font-weight: 500;">(ใช้เวลา ' + escapeHTML(durationInfo.text) + ')</div>' 
         : '';
 
-      html += '<tr>' +
-                '<td style="text-align:center; font-weight:600; color:#64748b;">' + (i + 1) + '</td>' +
-                '<td>' + escapeHTML(item.department || '-') + '</td>' +
-                '<td><b>' + escapeHTML(item.parkName || '-') + '</b></td>' +
-                '<td>' + escapeHTML(item.area || '-') + '</td>' +
-                '<td><span class="filter-tag">' + escapeHTML(item.category || '-') + '</span></td>' +
-                '<td><span style="color:#047857; font-weight:500;">✓ ' + escapeHTML(item.issue || '-') + '</span></td>' +
-                '<td><small style="color:#15803d; font-weight:500;">' + escapeHTML(item.actionDetail || '-') + '</small></td>' +
-                '<td style="text-align:center;">' + imgHtml + '</td>' +
-                '<td><small style="color:#64748b;">' + escapeHTML(item.reportedAt || '-') + '</small></td>' +
-                '<td>' +
-                  '<small style="color:#1e293b; font-weight:500;">' + escapeHTML(item.completedDate || '-') + '</small>' +
-                  durationResolvedBadge +
-                '</td>' +
-                '<td><span class="filter-tag active-tag">' + escapeHTML(item.operator || '-') + '</span></td>' +
-                '<td style="text-align:center;">' +
-                  '<button type="button" class="btn-table-view" onclick="viewDetailFromTable(' + i + ')">' +
-                    '<i class="fa-solid fa-eye"></i> ดู' +
-                  '</button>' +
-                '</td>' +
-              '</tr>';
+      htmlRows.push('<tr>' +
+        '<td style="text-align:center; font-weight:600; color:#64748b;">' + (actualIndex + 1) + '</td>' +
+        '<td>' + escapeHTML(item.department || '-') + '</td>' +
+        '<td><b>' + escapeHTML(item.parkName || '-') + '</b></td>' +
+        '<td>' + escapeHTML(item.area || '-') + '</td>' +
+        '<td><span class="filter-tag">' + escapeHTML(item.category || '-') + '</span></td>' +
+        '<td><span style="color:#047857; font-weight:500;">✓ ' + escapeHTML(item.issue || '-') + '</span></td>' +
+        '<td><small style="color:#15803d; font-weight:500;">' + escapeHTML(item.actionDetail || '-') + '</small></td>' +
+        '<td style="text-align:center;">' + imgHtml + '</td>' +
+        '<td><small style="color:#64748b;">' + escapeHTML(item.reportedAt || '-') + '</small></td>' +
+        '<td>' +
+          '<small style="color:#1e293b; font-weight:500;">' + escapeHTML(item.completedDate || '-') + '</small>' +
+          durationResolvedBadge +
+        '</td>' +
+        '<td><span class="filter-tag active-tag">' + escapeHTML(item.operator || '-') + '</span></td>' +
+        '<td style="text-align:center;">' +
+          '<button type="button" class="btn-table-view" onclick="viewDetailFromTable(' + actualIndex + ')">' +
+            '<i class="fa-solid fa-eye"></i> ดู' +
+          '</button>' +
+        '</td>' +
+      '</tr>');
     } else {
+      var urgencyBadgeHtml = '<span class="table-urgency-badge" style="background-color:' + urgColor.bg + '; color:' + urgColor.text + ';">' +
+                               escapeHTML(urgencyLabels[item.urgency] || ('ระดับ ' + item.urgency)) +
+                             '</span>';
+
       var durationPendingBadge = '';
       if (durationInfo) {
         var isDelayed = durationInfo.days >= 7;
         var badgeColor = isDelayed ? '#e11d48' : '#d97706';
-        durationPendingBadge = '<div style="font-size: 0.73rem; font-weight: 600; color: ' + badgeColor + ';">' +
-                                 '<i class="fa-regular fa-clock"></i> รอมาแล้ว ' + escapeHTML(durationInfo.text) +
+        durationPendingBadge = '<div style="font-size: 0.72rem; font-weight: 600; color: ' + badgeColor + ';">' +
+                                 '<i class="fa-regular fa-clock"></i> รอ ' + escapeHTML(durationInfo.text) +
                                '</div>';
       }
 
-      html += '<tr>' +
-                '<td style="text-align:center; font-weight:600; color:#64748b;">' + (i + 1) + '</td>' +
-                '<td>' + escapeHTML(item.department || '-') + '</td>' +
-                '<td><b>' + escapeHTML(item.parkName || '-') + '</b></td>' +
-                '<td>' + escapeHTML(item.area || '-') + '</td>' +
-                '<td><span class="filter-tag">' + escapeHTML(item.category || '-') + '</span></td>' +
-                '<td><span style="color:#b91c1c; font-weight:500;">' + escapeHTML(item.issue || '-') + '</span></td>' +
-                '<td style="text-align:center;">' + urgencyBadgeHtml + '</td>' +
-                '<td>' +
-                  '<div style="font-size: 0.8rem; color: #334155;">' + escapeHTML(item.reportedAt || '-') + '</div>' +
-                  durationPendingBadge +
-                '</td>' +
-                '<td style="text-align:center;">' + imgHtml + '</td>' +
-                '<td><small style="color:#64748b;">' + escapeHTML(item.notes !== '-' ? item.notes : '') + '</small></td>' +
-                '<td style="text-align:center;">' +
-                  '<button type="button" class="btn-table-view" onclick="viewDetailFromTable(' + i + ')">' +
-                    '<i class="fa-solid fa-eye"></i> ดู' +
-                  '</button>' +
-                '</td>' +
-              '</tr>';
+      htmlRows.push('<tr>' +
+        '<td style="text-align:center; font-weight:600; color:#64748b;">' + (actualIndex + 1) + '</td>' +
+        '<td>' + escapeHTML(item.department || '-') + '</td>' +
+        '<td><b>' + escapeHTML(item.parkName || '-') + '</b></td>' +
+        '<td>' + escapeHTML(item.area || '-') + '</td>' +
+        '<td><span class="filter-tag">' + escapeHTML(item.category || '-') + '</span></td>' +
+        '<td><span style="color:#b91c1c; font-weight:500;">' + escapeHTML(item.issue || '-') + '</span></td>' +
+        '<td style="text-align:center;">' + urgencyBadgeHtml + '</td>' +
+        '<td>' +
+          '<div style="font-size: 0.8rem; color: #334155;">' + escapeHTML(item.reportedAt || '-') + '</div>' +
+          durationPendingBadge +
+        '</td>' +
+        '<td style="text-align:center;">' + imgHtml + '</td>' +
+        '<td><small style="color:#64748b;">' + escapeHTML(item.notes !== '-' ? item.notes : '') + '</small></td>' +
+        '<td style="text-align:center;">' +
+          '<button type="button" class="btn-table-view" onclick="viewDetailFromTable(' + actualIndex + ')">' +
+            '<i class="fa-solid fa-eye"></i> ดู' +
+          '</button>' +
+        '</td>' +
+      '</tr>');
     }
   }
 
-  tbody.innerHTML = html;
+  tbody.innerHTML = htmlRows.join('');
+
+  // แถบควบคุมด้านล่าง (Pagination Bar)
+  summary.innerHTML = 
+    '<div class="table-pagination-controls">' +
+      '<span>แสดง ' + (startIndex + 1) + ' - ' + endIndex + ' จากทั้งหมด <b>' + totalCount + '</b> รายการ</span>' +
+      '<div class="table-page-btns">' +
+        '<button type="button" class="btn-page-nav" onclick="changeTablePage(-1)" ' + (tableCurrentPage <= 1 ? 'disabled' : '') + '><i class="fa-solid fa-chevron-left"></i> ก่อนหน้า</button>' +
+        '<span class="page-current-text">' + tableCurrentPage + ' / ' + totalPages + '</span>' +
+        '<button type="button" class="btn-page-nav" onclick="changeTablePage(1)" ' + (tableCurrentPage >= totalPages ? 'disabled' : '') + '>ถัดไป <i class="fa-solid fa-chevron-right"></i></button>' +
+      '</div>' +
+    '</div>';
 }
 
+function changeTablePage(delta) {
+  tableCurrentPage += delta;
+  displayTableRows(currentFilteredTableData);
+  var container = document.querySelector('.table-responsive-container');
+  if (container) container.scrollTop = 0;
+}
+
+// 🚀 หน่วงเวลาค้นหา (Debounce) ไม่ให้คำนวณทุกๆ ตัวอักษรที่พิมพ์
+var searchTimeout = null;
 function filterTableSearch() {
-  var query = (document.getElementById('tableSearchInput').value || '').trim().toLowerCase();
-  if (!query) {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(function() {
+    var query = (document.getElementById('tableSearchInput').value || '').trim().toLowerCase();
+    tableCurrentPage = 1;
+
+    var sourceData = (currentTableTab === 'active') ? allDamageData : rawResolvedData;
+    var filters = getActiveFilters();
+
+    var filtered = sourceData;
+    if (filters.department !== 'all') filtered = filtered.filter(d => d.department === filters.department);
+    if (filters.park !== 'all') filtered = filtered.filter(d => d.parkName === filters.park);
+    if (filters.category !== 'all') filtered = filtered.filter(d => d.category === filters.category);
+    if (filters.urgency !== 'all') filtered = filtered.filter(d => d.urgency === parseInt(filters.urgency, 10));
+
+    if (query) {
+      currentFilteredTableData = filtered.filter(function(it) {
+        return (
+          (it.parkName || '') + ' ' +
+          (it.area || '') + ' ' +
+          (it.issue || '') + ' ' +
+          (it.department || '') + ' ' +
+          (it.category || '') + ' ' +
+          (it.notes || '') + ' ' +
+          (it.operator || '')
+        ).toLowerCase().indexOf(query) !== -1;
+      });
+    } else {
+      currentFilteredTableData = filtered;
+    }
+
     displayTableRows(currentFilteredTableData);
-    return;
-  }
-
-  var searchResults = currentFilteredTableData.filter(function(it) {
-    var str = (it.parkName + ' ' + it.area + ' ' + it.issue + ' ' + it.department + ' ' + it.category + ' ' + (it.notes || '') + ' ' + (it.operator || '') + ' ' + (it.completedDate || '')).toLowerCase();
-    return str.indexOf(query) !== -1;
-  });
-
-  displayTableRows(searchResults);
+  }, 150); // 150ms debounce
 }
 
 function viewDetailFromTable(index) {
