@@ -40,7 +40,7 @@
         </div>
       </div>
 
-      <button class="btn-menu-toggle" id="btnMenuToggle" onclick="toggleMobileMenu()">
+      <button type="button" class="btn-menu-toggle" id="btnMenuToggle" onclick="toggleMobileMenu()">
         <i class="fa-solid fa-sliders"></i> ตัวกรอง/เมนู
       </button>
       
@@ -49,22 +49,22 @@
           <div id="userBadge" class="user-badge" style="display: none;">
             <i class="fa-solid fa-circle-user"></i> <span id="userBadgeText">-</span>
           </div>
-          <button id="btnDashboard" class="btn-action btn-dashboard" onclick="openDashboardModal()">
+          <button type="button" id="btnDashboard" class="btn-action btn-dashboard" onclick="openDashboardModal()">
             <i class="fa-solid fa-chart-pie"></i> แดชบอร์ดสถิติ
           </button>
-          <button id="btnAddReport" class="btn-action btn-add" onclick="openAddModal()" style="display: none;">
+          <button type="button" id="btnAddReport" class="btn-action btn-add" onclick="openAddModal()" style="display: none;">
             <i class="fa-solid fa-plus"></i> เพิ่มรายการ
           </button>
-          <button id="btnLogin" class="btn-action btn-login" onclick="openAuthModal()">
+          <button type="button" id="btnLogin" class="btn-action btn-login" onclick="openAuthModal()">
             <i class="fa-solid fa-key"></i> เจ้าหน้าที่
           </button>
-          <button id="btnLogout" class="btn-action btn-logout" onclick="handleLogout()" style="display: none;">
+          <button type="button" id="btnLogout" class="btn-action btn-logout" onclick="handleLogout()" style="display: none;">
             <i class="fa-solid fa-right-from-bracket"></i> ออก
           </button>
         </div>
 
         <div class="header-controls-row header-controls-row-2">
-          <button id="btnTable" class="btn-action btn-table" onclick="openTableModal()">
+          <button type="button" id="btnTable" class="btn-action btn-table" onclick="openTableModal()">
             <i class="fa-solid fa-table-list"></i> ตารางข้อมูล
           </button>
           <select id="departmentFilter" class="header-filter-select" onchange="onDepartmentFilterChange()">
@@ -134,7 +134,7 @@
       <i class="fa-solid fa-expand"></i>
     </button>
 
-    <!-- 🌟 ปุ่มดึงตำแหน่ง GPS ปัจจุบันและโฟกัสสวนใกล้เคียงทันที -->
+    <!-- 🌟 ปุ่มดึงตำแหน่ง GPS ปัจจุบันและโฟกัสสวนใกล้เคียง -->
     <button type="button" class="btn-map-locate" title="ค้นหาตำแหน่งของฉันและโฟกัสสวนใกล้เคียง" onclick="manualTriggerUserLocation()">
       <i class="fa-solid fa-location-crosshairs"></i>
     </button>
@@ -146,14 +146,14 @@
   </footer>
 
   <!-- Modal: Table Data -->
-  <div id="tableModal" class="modal">
+  <div id="tableModal" class="modal" style="display: none;">
     <div class="modal-content table-modal-card">
       <div class="modal-header">
         <div class="modal-title-group">
           <h3><i class="fa-solid fa-table-list"></i> ตารางข้อมูลการแจ้งชำรุดเสียหาย</h3>
           <span id="tableCountBadge" class="pagination-badge">0 รายการ</span>
         </div>
-        <button class="close-btn" onclick="closeModal('tableModal')">&times;</button>
+        <button type="button" class="close-btn" onclick="closeModal('tableModal')">&times;</button>
       </div>
       <div class="modal-body table-modal-body">
         <div class="table-tabs-nav">
@@ -164,7 +164,7 @@
             <i class="fa-solid fa-circle-check"></i> ประวัติปรับปรุงเสร็จสิ้น (<span id="tabCountResolved">0</span>)
           </button>
         </div>
-        <!-- แถบควบคุมบนตาราง: สถานะตัวกรอง + ช่องค้นหา + ปุ่ม Export CSV -->
+        <!-- แถบควบคุมบนตาราง -->
         <div class="table-toolbar">
           <div class="table-filter-info" id="tableFilterInfo"></div>
           
@@ -184,7 +184,7 @@
           <table class="custom-data-table" id="reportDataTable">
             <thead id="reportDataTableHead"></thead>
             <tbody id="reportDataTableBody">
-              <tr><td colspan="11" class="text-center py-4 text-muted">กำลังโหลดข้อมูล...</td></tr>
+              <tr><td colspan="12" class="text-center py-4 text-muted">กำลังโหลดข้อมูล...</td></tr>
             </tbody>
           </table>
         </div>
@@ -197,13 +197,13 @@
   </div>
 
   <!-- Modal: Dashboard -->
-  <div id="dashboardModal" class="modal">
+  <div id="dashboardModal" class="modal" style="display: none;">
     <div class="modal-content dashboard-card">
       <div class="modal-header">
         <div class="modal-title-group">
           <h3><i class="fa-solid fa-chart-pie"></i> แดชบอร์ดสถิติและภาพรวม</h3>
         </div>
-        <button class="close-btn" onclick="closeModal('dashboardModal')">&times;</button>
+        <button type="button" class="close-btn" onclick="closeModal('dashboardModal')">&times;</button>
       </div>
       <div class="modal-body scrollable-body dashboard-body">
         <div class="dashboard-filter-indicator" id="dashFilterIndicator"></div>
@@ -266,15 +266,15 @@
     </div>
   </div>
 
-  <!-- Modal: Detail (รองรับทั้งรายการรอปรับปรุง และรายการที่เสร็จสิ้นแล้ว) -->
-  <div id="detailModal" class="modal">
+  <!-- Modal: Detail (พร้อมแสดงวัน-เวลาที่แจ้ง และระยะเวลารอดำเนินการ) -->
+  <div id="detailModal" class="modal" style="display: none;">
     <div class="modal-content">
       <div class="modal-header">
         <div class="modal-title-group">
           <h3 id="modalTitle"><i class="fa-solid fa-circle-info"></i> รายละเอียดการชำรุด</h3>
           <span id="modalPaginationBadge" class="pagination-badge">1/1</span>
         </div>
-        <button class="close-btn" onclick="closeModal('detailModal')">&times;</button>
+        <button type="button" class="close-btn" onclick="closeModal('detailModal')">&times;</button>
       </div>
       <div class="modal-body scrollable-body">
         
@@ -283,7 +283,7 @@
           <i class="fa-solid fa-circle-check"></i> ดำเนินการปรับปรุงแก้ไขเสร็จสิ้นแล้ว
         </div>
 
-        <!-- 🖼️ โซนรูปภาพ (รองรับทั้งภาพเดี่ยว และเปรียบเทียบ ก่อน-หลัง) -->
+        <!-- 🖼️ โซนรูปภาพ -->
         <div id="modalImagesWrapper" class="modal-images-grid">
           <!-- ภาพก่อนทำ -->
           <div class="image-box-item" id="boxBeforeImage">
@@ -296,7 +296,7 @@
             </div>
           </div>
 
-          <!-- ภาพหลังทำ (แสดงเมื่อปรับปรุงเสร็จแล้ว) -->
+          <!-- ภาพหลังทำ -->
           <div class="image-box-item" id="boxAfterImage" style="display: none;">
             <span class="image-box-badge badge-after">หลังปรับปรุง</span>
             <div class="image-container" id="modalAfterImageContainer">
@@ -309,7 +309,7 @@
         </div>
 
         <div class="info-cards-container">
-          <!-- 🌟 กล่องแสดงวิธีแก้ไขและผลการปรับปรุง -->
+          <!-- กล่องแสดงวิธีแก้ไข (กรณีปรับปรุงเสร็จแล้ว) -->
           <div class="info-card-block resolved-action-block" id="mResolvedActionBlock" style="display: none;">
             <div class="block-title text-emerald"><i class="fa-solid fa-screwdriver-wrench"></i> วิธีการดำเนินการแก้ไข / รายละเอียดการซ่อมแซม</div>
             <div class="block-content text-emerald font-semibold" id="mResolvedActionDetail">-</div>
@@ -349,36 +349,39 @@
               <span class="row-label"><i class="fa-solid fa-gauge-high"></i> ระดับความเร่งด่วน:</span>
               <span class="row-value" id="mUrgency">-</span>
             </div>
-            <!-- 🌟 เพิ่มส่วนแสดงวันเวลาที่แจ้ง และระยะเวลาที่รอปรับปรุง -->
-            <div class="block-row" id="mReportedAtRow">
+            
+            <!-- 🕒 เพิ่มแถวแสดงวันเวลาที่แจ้ง และระยะเวลารอปรับปรุง -->
+            <div class="block-row" id="mReportedAtRow" style="display: none;">
               <span class="row-label"><i class="fa-regular fa-clock"></i> วัน-เวลาที่แจ้ง:</span>
               <span class="row-value font-bold" id="mReportedAt">-</span>
             </div>
-            <div class="block-row" id="mDurationRow">
+            <div class="block-row" id="mDurationRow" style="display: none;">
               <span class="row-label" id="mDurationLabel"><i class="fa-solid fa-hourglass-half"></i> ระยะเวลารอปรับปรุง:</span>
-              <span class="row-value font-bold text-amber" id="mDuration">-</span>
+              <span class="row-value font-bold" id="mDuration">-</span>
             </div>
+
             <div class="block-row" id="mNotesRow">
               <span class="row-label"><i class="fa-solid fa-comment-dots"></i> หมายเหตุเดิม:</span>
               <span class="row-value text-muted" id="mNotes">-</span>
             </div>
           </div>
+        </div>
 
         <div id="adminActionsContainer" class="admin-actions-container" style="display: none;">
-          <button class="btn-resolve-action" onclick="onResolveButtonClick()">
+          <button type="button" class="btn-resolve-action" onclick="onResolveButtonClick()">
             <i class="fa-solid fa-circle-check"></i> ดำเนินการปรับปรุงเสร็จสิ้น
           </button>
-          <button class="btn-edit-action" onclick="openEditModalFromCurrentItem()">
+          <button type="button" class="btn-edit-action" onclick="openEditModalFromCurrentItem()">
             <i class="fa-solid fa-pen-to-square"></i> แก้ไขข้อมูล
           </button>
         </div>
       </div>
       <div class="modal-footer" id="modalFooterNav">
-        <button class="nav-btn" id="btnPrev" onclick="prevReportItem()">
+        <button type="button" class="nav-btn" id="btnPrev" onclick="prevReportItem()">
           <i class="fa-solid fa-chevron-left"></i> ก่อนหน้า
         </button>
         <span class="nav-status-text" id="navStatusText">รายการที่ 1 จาก 1</span>
-        <button class="nav-btn" id="btnNext" onclick="nextReportItem()">
+        <button type="button" class="nav-btn" id="btnNext" onclick="nextReportItem()">
           ถัดไป <i class="fa-solid fa-chevron-right"></i>
         </button>
       </div>
@@ -392,7 +395,7 @@
         <h3 style="margin: 0; font-size: 1.05rem; color: #166534;">
           <i class="fa-solid fa-circle-check"></i> บันทึกการปรับปรุงเสร็จสิ้น
         </h3>
-        <button class="close-btn" onclick="closeResolveConfirmModal()">&times;</button>
+        <button type="button" class="close-btn" onclick="closeResolveConfirmModal()">&times;</button>
       </div>
       <div class="modal-body form-body" style="display: flex; flex-direction: column; gap: 12px;">
         <div id="resolveSummaryInfo" style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 10px; font-size: 0.85rem; color: #14532d;"></div>
@@ -404,7 +407,7 @@
           <textarea id="resolveActionDetail" class="form-input" rows="3" placeholder="ระบุรายละเอียด เช่น เปลี่ยนอุปกรณ์ใหม่, ซ่อมแซมเรียบร้อยแล้ว..." required style="width: 100%;"></textarea>
         </div>
 
-        <!-- ส่วนแนบภาพหลังปรับปรุง (กล้อง & คลังภาพ พร้อมพรีวิว) -->
+        <!-- ส่วนแนบภาพหลังปรับปรุง -->
         <div class="form-group" style="text-align: left;">
           <label style="font-weight: 600; font-size: 0.85rem; color: #1e293b; display: block; margin-bottom: 4px;">
             📷 ภาพถ่ายหลังการปรับปรุง (ถ้ามี)
@@ -441,7 +444,7 @@
     </div>
   </div>
 
-  <!-- Modal: Auth -->
+  <!-- Modal: Auth (ล็อกอินเจ้าหน้าที่) -->
   <div id="authModal" class="modal" style="display: none;">
     <div class="modal-content auth-card">
       <div class="modal-header">
@@ -460,12 +463,12 @@
     </div>
   </div>
 
-  <!-- Modal: Form Add/Edit (บันทึก / แก้ไขรายการแจ้งชำรุด พร้อมตัวเลือก Dynamic จากชีต) -->
-  <div id="reportFormModal" class="modal">
+  <!-- Modal: Form Add/Edit (บันทึก / แก้ไขรายการแจ้งชำรุด) -->
+  <div id="reportFormModal" class="modal" style="display: none;">
     <div class="modal-content form-card">
       <div class="modal-header">
         <h3 id="formModalTitle"><i class="fa-solid fa-plus-circle"></i> บันทึกรายการแจ้งชำรุด</h3>
-        <button class="close-btn" onclick="closeModal('reportFormModal')">&times;</button>
+        <button type="button" class="close-btn" onclick="closeModal('reportFormModal')">&times;</button>
       </div>
       <form id="reportForm" onsubmit="handleFormSubmit(event)" class="modal-body form-body scrollable-body">
         <input type="hidden" id="fRowIndex">
@@ -497,7 +500,7 @@
               <option value="">-- กรุณาเลือกหน่วยงานก่อน --</option>
             </select>
           </div>
-          <!-- บริเวณที่พบ (Col D หรือ Col G เมื่อเลือกหมวดสนามกีฬา) -->
+          <!-- บริเวณที่พบ -->
           <div class="form-group">
             <label><i class="fa-solid fa-map-pin"></i> บริเวณที่พบ *</label>
             <select id="fArea" required class="form-input">
@@ -506,7 +509,7 @@
           </div>
         </div>
 
-        <!-- 🚻 ตัวเลือก: ส่วนที่ชำรุด (เฉพาะหมวดสุขา จาก Col E) -->
+        <!-- ตัวเลือก: ส่วนที่ชำรุด (เฉพาะหมวดสุขา จาก Col E) -->
         <div class="form-group" id="toiletPartContainer" style="display: none;">
           <label><i class="fa-solid fa-toilet"></i> ส่วนที่ชำรุด (หมวดสุขา) *</label>
           <select id="fToiletPart" class="form-input" onchange="onFormToiletPartChange()">
@@ -514,7 +517,7 @@
           </select>
         </div>
 
-        <!-- 🚻 กล่องตัวเลือกหลายรายการ: อุปกรณ์สุขภัณฑ์ (จาก Col F) -->
+        <!-- กล่องตัวเลือกหลายรายการ: อุปกรณ์สุขภัณฑ์ (จาก Col F) -->
         <div class="form-group" id="toiletItemsContainer" style="display: none;">
           <label class="toilet-items-title">
             <i class="fa-solid fa-restroom text-emerald"></i> ระบุอุปกรณ์สุขภัณฑ์ที่ชำรุด (เลือกได้หลายรายการ) *
@@ -524,7 +527,7 @@
           </div>
         </div>
 
-        <!-- 📝 รายละเอียดการชำรุด / การปรับปรุง (พิมพ์อิสระ ไม่ดึงจากชีต) -->
+        <!-- รายละเอียดการชำรุด / การปรับปรุง -->
         <div class="form-group">
           <label><i class="fa-solid fa-pen-to-square"></i> รายละเอียดการชำรุด / การปรับปรุง *</label>
           <textarea id="fIssueDetail" required rows="3" placeholder="ระบุรายละเอียดความเสียหาย เช่น ท่อน้ำรั่วซึม, ก๊อกน้ำหลุด, พื้นชำรุด..." class="form-input"></textarea>
@@ -589,7 +592,7 @@
             </div>
             <img id="formImagePreview" src="" alt="พรีวิวภาพความเสียหาย" class="image-preview-box">
           </div>
-          <small class="form-hint" id="formImageHint">หากไม่เลือกภาพใหม่ ระบบจะคงภาพเดิมที่มีอยู่</small>
+          <small class="form-hint" id="formImageHint" style="display: none;">หากไม่เลือกภาพใหม่ ระบบจะคงภาพเดิมที่มีอยู่</small>
         </div>
 
         <div class="form-group">
@@ -607,7 +610,7 @@
   </div>
 
   <!-- Modal: Custom Confirm -->
-  <div id="confirmModal" class="modal">
+  <div id="confirmModal" class="modal" style="display: none;">
     <div class="modal-content confirm-card">
       <div class="confirm-body">
         <div class="confirm-icon-wrapper" id="confirmIconWrapper">
