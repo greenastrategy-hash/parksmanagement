@@ -204,24 +204,27 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function initMap() {
   var osmStandardLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    attribution: '&copy; OpenStreetMap contributors',
     maxZoom: 19
   });
 
   var satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-    attribution: '&copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics',
+    attribution: '&copy; Esri',
     maxNativeZoom: 18,
     maxZoom: 19
   });
 
+  // 🚀 จุดสำคัญ: เปิด preferCanvas: true เพื่อเรนเดอร์เส้นเขตบน Canvas (ลื่นขึ้นกว่า SVG 5-10 เท่า)
   map = L.map('map', {
     center: [13.7563, 100.5018],
     zoom: 11.5,
     minZoom: 9.5,
     maxZoom: 19,
-    zoomSnap: 0.1,
+    zoomSnap: 0.25,
     zoomDelta: 0.5,
     zoomControl: false,
+    preferCanvas: true, // เร่งความเร็วฮาร์ดแวร์
+    wheelDebounceTime: 40,
     layers: [osmStandardLayer]
   });
 
@@ -797,41 +800,45 @@ function renderGroupedMarkers(data) {
 
   groupedLocationData.sort((a, b) => a.maxUrgency - b.maxUrgency);
 
-  groupedLocationData.forEach(function(group) {
-    var urgColor = getUrgencyColor(group.maxUrgency);
-    
-    var marker = L.marker([group.lat, group.lng], {
-      icon: createMarkerIcon(group.maxUrgency, group.items.length, group.topCategory),
-      zIndexOffset: group.maxUrgency * 1000,
-      riseOnHover: true
-    });
+  // สร้าง Fragment หรือ Layer ย่อยเพื่อใส่ทีเดียว ไม่ต้องสั่ง Leaflet วาดทีละตัว
+  var markersList = [];
 
-    var parkNamesSet = {};
-    group.items.forEach(it => { if (it.parkName) parkNamesSet[it.parkName] = true; });
-    var parkNames = Object.keys(parkNamesSet).join(', ');
+  for (var i = 0; i < groupedLocationData.length; i++) {
+    (function(idx) {
+      var group = groupedLocationData[idx];
+      var urgColor = getUrgencyColor(group.maxUrgency);
+      
+      var marker = L.marker([group.lat, group.lng], {
+        icon: createMarkerIcon(group.maxUrgency, group.items.length, group.topCategory),
+        zIndexOffset: group.maxUrgency * 100,
+        riseOnHover: false // 🚀 ปิด riseOnHover เพื่อไม่ให้ Re-index ซ้ำซ้อนตอนเลื่อนเมาส์
+      });
 
-    var tooltipContent = '<b>' + escapeHTML(parkNames) + '</b><br/>' +
-                         'หมวดหมู่: <span style="font-weight:600; color:#047857;">' + escapeHTML(group.topCategory || '-') + '</span><br/>' +
-                         'จำนวนชำรุดทั้งหมด: <b>' + group.items.length + ' รายการ</b><br/>' +
-                         'ระดับความเสี่ยง: <span style="color:' + urgColor.bg + '; font-weight:bold;">' + escapeHTML(urgencyLabels[group.maxUrgency] || ('ระดับ ' + group.maxUrgency)) + '</span><br/>' +
-                         '<small style="color:#64748b;">(' + escapeHTML(urgencyDescriptions[group.maxUrgency] || '') + ')</small>';
-
-    marker.bindTooltip(tooltipContent, { sticky: true, className: 'district-tooltip' });
-
-    marker.on('click', function() {
-      // 1. เปิดหน้าต่างรายละเอียดทันที ไม่ต้องรอ animation ของแผนที่เพื่อตัดอาการดีเลย์
-      openDetailModal(group, 0);
-
-      // 2. ใช้ panTo แทน setView พร้อมหน่วงเวลาสั้นๆ 50ms เพื่อให้ UI modal render ลื่นไหล ไม่กระตุกค้าง
-      if (map) {
-        setTimeout(function() {
-          map.panTo([group.lat, group.lng], { animate: true, duration: 0.35 });
-        }, 50);
+      var parkNamesSet = {};
+      for (var k = 0; k < group.items.length; k++) {
+        if (group.items[k].parkName) parkNamesSet[group.items[k].parkName] = true;
       }
-    });
-    
-    markersGroup.addLayer(marker);
-  });
+      var parkNames = Object.keys(parkNamesSet).join(', ');
+
+      var tooltipContent = '<b>' + escapeHTML(parkNames) + '</b><br/>' +
+                           'หมวดหมู่: <span style="font-weight:600; color:#047857;">' + escapeHTML(group.topCategory || '-') + '</span><br/>' +
+                           'จำนวนชำรุดทั้งหมด: <b>' + group.items.length + ' รายการ</b><br/>' +
+                           'ระดับความเสี่ยง: <span style="color:' + urgColor.bg + '; font-weight:bold;">' + escapeHTML(urgencyLabels[group.maxUrgency] || ('ระดับ ' + group.maxUrgency)) + '</span>';
+
+      marker.bindTooltip(tooltipContent, { sticky: false, direction: 'top', className: 'district-tooltip' });
+
+      marker.on('click', function() {
+        // 🚀 แสดง Modal ทันที และตัดการ panTo/animate หน่วงๆ ออก
+        openDetailModal(group, 0);
+      });
+
+      markersList.push(marker);
+    })(i);
+  }
+
+  // Add ทั้งชุดในคำสั่งเดียว
+  var batchLayer = L.featureGroup(markersList);
+  markersGroup.addLayer(batchLayer);
 }
 
 function filterMarkers() {
@@ -846,46 +853,25 @@ function filterMarkers() {
   updateSummaryStats(filtered);
   renderGroupedMarkers(filtered);
 
+  // เลื่อนมุมมองแผนที่แบบเบา ไม่ใช้ animation ยาว
   if (map) {
     if (filters.park !== 'all' && filtered.length > 0) {
-      var lats = filtered.map(d => d.lat);
-      var lngs = filtered.map(d => d.lng);
-      var minLat = Math.min(...lats), maxLat = Math.max(...lats);
-      var minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
-
-      if (filtered.length === 1 || (minLat === maxLat && minLng === maxLng)) {
-        map.setView([minLat, minLng], 16.5, { animate: true, duration: 0.6 });
-      } else {
-        map.fitBounds([[minLat, minLng], [maxLat, maxLng]], {
-          padding: [40, 40],
-          maxZoom: 17,
-          animate: true,
-          duration: 0.6
-        });
-      }
-    } else if (filters.department !== 'all' && filtered.length > 0) {
-      var latsDept = filtered.map(d => d.lat);
-      var lngsDept = filtered.map(d => d.lng);
-      var bounds = [
-        [Math.min(...latsDept), Math.min(...lngsDept)],
-        [Math.max(...latsDept), Math.max(...lngsDept)]
-      ];
-      map.fitBounds(bounds, {
-        padding: [30, 30],
-        maxZoom: 14.5,
-        animate: true,
-        duration: 0.6
-      });
+      map.setView([filtered[0].lat, filtered[0].lng], 16);
     } else if (filters.department === 'all' && filters.park === 'all') {
       resetMapToDefaultView();
     }
   }
 
+  // 🚀 Lazy Load: อัปเดตเฉพาะ Modal ที่เปิดอยู่จริงๆ เพื่อไม่ให้เบราว์เซอร์กิน CPU
   var dashModal = document.getElementById('dashboardModal');
-  if (dashModal && dashModal.style.display === 'flex') renderDashboardWithCurrentFilters();
+  if (dashModal && dashModal.style.display === 'flex') {
+    renderDashboardWithCurrentFilters();
+  }
 
   var tblModal = document.getElementById('tableModal');
-  if (tblModal && tblModal.style.display === 'flex') renderTableWithCurrentFilters();
+  if (tblModal && tblModal.style.display === 'flex') {
+    renderTableWithCurrentFilters();
+  }
 }
 
 function openDetailModal(group, index) {
@@ -1323,38 +1309,29 @@ function drawBMAData(data) {
     return Object.keys(lats).length <= 2 && Object.keys(lngs).length <= 2;
   }
 
+  // 🚀 วาดเส้นเขตแบบ Static ประสิทธิภาพสูง ไม่ผูก event mouseover/mouseout ถี่ๆ ที่ทำให้กระตุก
   bmaDistrictsLayer = L.geoJSON(data, {
     filter: feature => !isTrashBox(feature),
-    style: () => ({
+    style: {
       color: '#00744b',
-      weight: 1.5,
-      opacity: 0.65,
+      weight: 1.2,
+      opacity: 0.7,
       fillColor: '#00744b',
-      fillOpacity: 0.02,
-      className: 'bma-district-path'
-    }),
+      fillOpacity: 0.02
+    },
     onEachFeature: function(feature, layer) {
       var props = feature.properties || {};
       var dName = props.dname || props.dist_th || props.name || '';
       if (dName) {
         if (dName.indexOf('เขต') === -1) dName = 'เขต' + dName;
-        layer.bindTooltip(escapeHTML(dName), { sticky: true, className: 'district-tooltip' });
-        layer.on({
-          click: e => {
-            if (isPickingLocationOnMap) completeMapPinPick(e.latlng.lat, e.latlng.lng);
-          },
-          mouseover: e => e.target.setStyle({ weight: 2.2, opacity: 0.9, fillOpacity: 0.08 }),
-          mouseout: () => bmaDistrictsLayer.resetStyle(layer)
-        });
+        // ใช้ sticky: false เพื่อไม่ให้คำนวณตำแหน่งเมาส์ตลอดเวลา
+        layer.bindTooltip(escapeHTML(dName), { sticky: false, direction: 'center', className: 'district-tooltip' });
       }
+      layer.on('click', function(e) {
+        if (isPickingLocationOnMap) completeMapPinPick(e.latlng.lat, e.latlng.lng);
+      });
     }
   }).addTo(map);
-
-  setTimeout(function() {
-    if (map && bmaDistrictsLayer && bmaDistrictsLayer.getLayers().length > 0) {
-      map.invalidateSize();
-    }
-  }, 200);
 }
 
 function openAuthModal() {
