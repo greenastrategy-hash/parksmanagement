@@ -45,6 +45,7 @@
       </button>
       
       <div class="header-actions" id="headerActions">
+        <!-- แถวบน: การเข้าถึงระบบและตารางข้อมูล -->
         <div class="header-controls-row">
           <div id="userBadge" class="user-badge" style="display: none;">
             <i class="fa-solid fa-circle-user"></i> <span id="userBadgeText">-</span>
@@ -62,7 +63,8 @@
             <i class="fa-solid fa-right-from-bracket"></i> ออก
           </button>
         </div>
-      
+
+        <!-- แถวล่าง: ปุ่มตารางข้อมูล + ตัวกรองพื้นที่และหมวดหมู่ -->
         <div class="header-controls-row">
           <button type="button" id="btnTable" class="btn-action btn-table" onclick="openTableModal()">
             <i class="fa-solid fa-table-list"></i> ตารางข้อมูล
@@ -266,7 +268,7 @@
     </div>
   </div>
 
-  <!-- Modal: Detail (พร้อมแสดงวัน-เวลาที่แจ้ง และระยะเวลารอดำเนินการ) -->
+  <!-- Modal: Detail (พร้อมแสดงวัน-เวลา, ระยะเวลารอ, กล่องคำอธิบายความเร่งด่วน และตรึง Footer) -->
   <div id="detailModal" class="modal" style="display: none;">
     <div class="modal-content">
       <div class="modal-header">
@@ -276,14 +278,14 @@
         </div>
         <button type="button" class="close-btn" onclick="closeModal('detailModal')">&times;</button>
       </div>
+      
       <div class="modal-body scrollable-body">
-        
         <!-- แถบแสดงสถานะปรับปรุงเสร็จสิ้น -->
         <div id="resolvedStatusBanner" class="resolved-status-banner" style="display: none;">
           <i class="fa-solid fa-circle-check"></i> ดำเนินการปรับปรุงแก้ไขเสร็จสิ้นแล้ว
         </div>
 
-        <!-- 🖼️ โซนรูปภาพ -->
+        <!-- 🖼️ โซนรูปภาพ (1 รูปเต็มความกว้าง / 2 รูปคู่กัน) -->
         <div id="modalImagesWrapper" class="modal-images-grid">
           <!-- ภาพก่อนทำ -->
           <div class="image-box-item" id="boxBeforeImage">
@@ -309,7 +311,7 @@
         </div>
 
         <div class="info-cards-container">
-          <!-- กล่องแสดงวิธีแก้ไขและผลการปรับปรุง -->
+          <!-- กล่องแสดงวิธีแก้ไข (กรณีปรับปรุงเสร็จแล้ว) -->
           <div class="info-card-block resolved-action-block" id="mResolvedActionBlock" style="display: none;">
             <div class="block-title text-emerald">
               <i class="fa-solid fa-screwdriver-wrench"></i> วิธีการดำเนินการแก้ไข / รายละเอียดการซ่อมแซม
@@ -352,7 +354,7 @@
               <span class="row-value" id="mUrgency">-</span>
             </div>
             
-            <!-- 🕒 เพิ่มแถวแสดงวันเวลาที่แจ้ง และระยะเวลารอปรับปรุง -->
+            <!-- 🕒 แถวแสดงวันเวลาที่แจ้ง และระยะเวลารอปรับปรุง -->
             <div class="block-row" id="mReportedAtRow" style="display: none;">
               <span class="row-label"><i class="fa-regular fa-clock"></i> วัน-เวลาที่แจ้ง:</span>
               <span class="row-value font-bold" id="mReportedAt">-</span>
@@ -367,9 +369,8 @@
               <span class="row-value text-muted" id="mNotes">-</span>
             </div>
           </div>
-        </div>
 
-        <!-- กล่องคำอธิบายระดับความเร่งด่วน (ท้ายหน้าต่างรายละเอียด) -->
+          <!-- 📖 กล่องคำอธิบายระดับความเร่งด่วน (ท้ายหน้าต่างรายละเอียด) -->
           <div class="info-card-block urgency-legend-block" id="mUrgencyLegendBlock">
             <div class="block-title text-muted">
               <i class="fa-solid fa-circle-question"></i> คำอธิบายระดับความเร่งด่วน:
@@ -386,7 +387,9 @@
             <i class="fa-solid fa-pen-to-square"></i> แก้ไขข้อมูล
           </button>
         </div>
-      </div>
+      </div><!-- จบ .modal-body -->
+
+      <!-- แถบปุ่มก่อนหน้า-ถัดไป ตรึงอยู่ด้านล่างภายในการ์ด ไม่หลุดลอย -->
       <div class="modal-footer" id="modalFooterNav">
         <button type="button" class="nav-btn" id="btnPrev" onclick="prevReportItem()">
           <i class="fa-solid fa-chevron-left"></i> ก่อนหน้า
@@ -396,8 +399,8 @@
           ถัดไป <i class="fa-solid fa-chevron-right"></i>
         </button>
       </div>
-    </div>
-  </div>
+    </div><!-- จบ .modal-content -->
+  </div><!-- จบ #detailModal -->
 
   <!-- Modal: Resolve Action (บันทึกการปรับปรุงเสร็จสิ้น) -->
   <div id="resolveConfirmModal" class="modal" style="display: none;">
