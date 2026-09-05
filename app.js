@@ -856,7 +856,6 @@ function renderGroupedMarkers(data) {
 
   groupedLocationData.sort((a, b) => a.maxUrgency - b.maxUrgency);
 
-  // สร้าง Fragment หรือ Layer ย่อยเพื่อใส่ทีเดียว ไม่ต้องสั่ง Leaflet วาดทีละตัว
   var markersList = [];
 
   for (var i = 0; i < groupedLocationData.length; i++) {
@@ -867,7 +866,7 @@ function renderGroupedMarkers(data) {
       var marker = L.marker([group.lat, group.lng], {
         icon: createMarkerIcon(group.maxUrgency, group.items.length, group.topCategory),
         zIndexOffset: group.maxUrgency * 100,
-        riseOnHover: false // 🚀 ปิด riseOnHover เพื่อไม่ให้ Re-index ซ้ำซ้อนตอนเลื่อนเมาส์
+        riseOnHover: false
       });
 
       var parkNamesSet = {};
@@ -876,15 +875,30 @@ function renderGroupedMarkers(data) {
       }
       var parkNames = Object.keys(parkNamesSet).join(', ');
 
-      var tooltipContent = '<b>' + escapeHTML(parkNames) + '</b><br/>' +
-                           'หมวดหมู่: <span style="font-weight:600; color:#047857;">' + escapeHTML(group.topCategory || '-') + '</span><br/>' +
-                           'จำนวนชำรุดทั้งหมด: <b>' + group.items.length + ' รายการ</b><br/>' +
-                           'ระดับความเสี่ยง: <span style="color:' + urgColor.bg + '; font-weight:bold;">' + escapeHTML(urgencyLabels[group.maxUrgency] || ('ระดับ ' + group.maxUrgency)) + '</span>';
+      var urgTitle = urgencyLabels[group.maxUrgency] || ('ระดับ ' + group.maxUrgency);
+      var urgDesc = urgencyDescriptions[group.maxUrgency] ? ' (' + urgencyDescriptions[group.maxUrgency] + ')' : '';
 
-      marker.bindTooltip(tooltipContent, { sticky: false, direction: 'top', className: 'district-tooltip' });
+      // โครงสร้างพรีวิวสไตล์เวอร์ชันแรก สะอาดตา และจัดสัดส่วนชัดเจน
+      var tooltipContent = 
+        '<div class="tooltip-park-title">' + escapeHTML(parkNames) + '</div>' +
+        '<div class="tooltip-info-row"><span>หมวดหมู่:</span> <b>' + escapeHTML(group.topCategory || '-') + '</b></div>' +
+        '<div class="tooltip-info-row"><span>จำนวนชำรุดทั้งหมด:</span> <b>' + group.items.length + ' รายการ</b></div>' +
+        '<div class="tooltip-info-row"><span>ระดับความเสี่ยง:</span> ' +
+          '<span class="tooltip-urgency-highlight" style="color:' + urgColor.bg + ';">' + 
+            escapeHTML(urgTitle + urgDesc) + 
+          '</span>' +
+        '</div>';
+
+      // กำหนด direction เป็น top พร้อม offset เพื่อให้ปลายลูกศรชี้ลงตรงกึ่งกลางหัวหมุด
+      marker.bindTooltip(tooltipContent, {
+        direction: 'top',
+        offset: [0, -20],
+        sticky: false,
+        className: 'marker-preview-tooltip',
+        opacity: 1
+      });
 
       marker.on('click', function() {
-        // 🚀 แสดง Modal ทันที และตัดการ panTo/animate หน่วงๆ ออก
         openDetailModal(group, 0);
       });
 
@@ -892,7 +906,6 @@ function renderGroupedMarkers(data) {
     })(i);
   }
 
-  // Add ทั้งชุดในคำสั่งเดียว
   var batchLayer = L.featureGroup(markersList);
   markersGroup.addLayer(batchLayer);
 }
