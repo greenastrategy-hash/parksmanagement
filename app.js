@@ -467,8 +467,9 @@ function displayTableRows(dataList) {
         '</td>' +
       '</tr>');
     } else {
-      var urgencyBadgeHtml = '<span class="table-urgency-badge" style="background-color:' + urgColor.bg + '; color:' + urgColor.text + ';">' +
-                               escapeHTML(urgencyLabels[item.urgency] || ('ระดับ ' + item.urgency)) +
+      // ปรับให้แสดงสั้นกระชับ สวยงาม ไม่ล้นตาราง
+      var urgencyBadgeHtml = '<span class="table-urgency-badge" style="background-color:' + urgColor.bg + '; color:' + urgColor.text + '; border: 1px solid ' + urgColor.border + ';">' +
+                               'ระดับ ' + (item.urgency || 1) +
                              '</span>';
 
       var durationPendingBadge = '';
@@ -1002,17 +1003,30 @@ function displayCurrentReportItem() {
       '<i class="' + catIconClass + '"></i> ' + escapeHTML(item.category) +
     '</span>';
   
+  // ⚡ ปรับความเร่งด่วน: แถวบนแสดงเฉพาะ "ระดับ 1-5" แบบกระชับ
   var urgColor = getUrgencyColor(item.urgency);
-  var urgTitle = urgencyLabels[item.urgency] || ('ระดับ ' + item.urgency);
+  var urgLevelText = 'ระดับ ' + (item.urgency || 1);
   var urgDesc = urgencyDescriptions[item.urgency] || '';
+  var urgFullName = urgencyLabels[item.urgency] || urgLevelText;
 
   document.getElementById('mUrgency').innerHTML = 
-    '<div style="display: flex; flex-direction: column; gap: 3px; align-items: flex-end;">' +
-      '<span class="modal-urgency-badge" style="background-color:' + urgColor.bg + '; color:' + urgColor.text + '; border: 1px solid ' + urgColor.border + ';">' + 
-        escapeHTML(urgTitle) + 
-      '</span>' +
-      '<small style="color: #64748b; font-size: 0.76rem; font-weight: 500;">• ' + escapeHTML(urgDesc) + '</small>' +
-    '</div>';
+    '<span class="modal-urgency-badge" style="background-color:' + urgColor.bg + '; color:' + urgColor.text + '; border: 1px solid ' + urgColor.border + ';">' + 
+      escapeHTML(urgLevelText) + 
+    '</span>';
+
+  // 📖 กล่องคำอธิบายความหมายความเร่งด่วนท้ายหน้าต่างรายละเอียด
+  var legendBlock = document.getElementById('mUrgencyLegendBlock');
+  var legendDesc = document.getElementById('mUrgencyLegendDesc');
+  if (legendBlock && legendDesc) {
+    legendDesc.innerHTML = 
+      '<div style="display: flex; align-items: center; gap: 6px; font-weight: 600; color: ' + urgColor.bg + ';">' +
+        '<span style="display:inline-block; width:8px; height:8px; border-radius:50%; background-color:' + urgColor.bg + ';"></span>' +
+        escapeHTML(urgFullName) +
+      '</div>' +
+      '<div style="font-size: 0.8rem; color: #475569; margin-top: 3px; padding-left: 14px;">' +
+        '• ' + escapeHTML(urgDesc) +
+      '</div>';
+  }
   
   // 🕒 คำนวณวัน-เวลา และระยะเวลา
   var reportedAtRow = document.getElementById('mReportedAtRow');
@@ -1057,7 +1071,7 @@ function displayCurrentReportItem() {
     notesRow.style.display = 'none';
   }
 
-  // 🖼️ จัดการการแสดงรูปภาพเดี่ยว vs คู่ (แก้ปัญหาภาพที่ 1 & 3)
+  // 🖼️ จัดการการแสดงรูปภาพเดี่ยว vs คู่
   var banner = document.getElementById('resolvedStatusBanner');
   var actionBlock = document.getElementById('mResolvedActionBlock');
   var imagesWrapper = document.getElementById('modalImagesWrapper');
@@ -1086,13 +1100,11 @@ function displayCurrentReportItem() {
         if (fallbackAfter) fallbackAfter.style.display = 'flex';
       }
     }
-    // มี 2 รูป ขยายเป็น 2 ฝั่งคู่กัน
     if (imagesWrapper) imagesWrapper.classList.add('is-compare');
   } else {
     if (banner) banner.style.display = 'none';
     if (actionBlock) actionBlock.style.display = 'none';
     if (boxAfter) boxAfter.style.display = 'none';
-    // มีรูปเดียวก่อนปรับปรุง -> ยืดเต็มความกว้าง 100% เหมือนเดิม
     if (imagesWrapper) imagesWrapper.classList.remove('is-compare');
   }
 
@@ -1133,6 +1145,7 @@ function displayCurrentReportItem() {
     footerNav.style.display = 'none';
   }
 }
+
 function prevReportItem() {
   if (currentActiveGroup && currentActiveIndex > 0) {
     currentActiveIndex--;
