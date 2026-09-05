@@ -819,8 +819,15 @@ function renderGroupedMarkers(data) {
     marker.bindTooltip(tooltipContent, { sticky: true, className: 'district-tooltip' });
 
     marker.on('click', function() {
-      if (map) map.setView([group.lat, group.lng], 16, { animate: true, duration: 0.5 });
+      // 1. เปิดหน้าต่างรายละเอียดทันที ไม่ต้องรอ animation ของแผนที่เพื่อตัดอาการดีเลย์
       openDetailModal(group, 0);
+
+      // 2. ใช้ panTo แทน setView พร้อมหน่วงเวลาสั้นๆ 50ms เพื่อให้ UI modal render ลื่นไหล ไม่กระตุกค้าง
+      if (map) {
+        setTimeout(function() {
+          map.panTo([group.lat, group.lng], { animate: true, duration: 0.35 });
+        }, 50);
+      }
     });
     
     markersGroup.addLayer(marker);
@@ -943,13 +950,12 @@ function displayCurrentReportItem() {
   var item = currentActiveGroup.items[currentActiveIndex];
   var isResolved = !!item.isResolved;
 
-  document.getElementById('mDepartment').innerText = item.department;
-  document.getElementById('mParkName').innerText = item.parkName;
-  document.getElementById('mArea').innerText = item.area;
-  document.getElementById('mIssue').innerText = item.issue;
+  document.getElementById('mDepartment').innerText = item.department || '-';
+  document.getElementById('mParkName').innerText = item.parkName || '-';
+  document.getElementById('mArea').innerText = item.area || '-';
+  document.getElementById('mIssue').innerText = item.issue || '-';
   
   var catIconClass = categoryIcons[item.category] || defaultCategoryIcon;
-  
   document.getElementById('mCategory').innerHTML = 
     '<span class="modal-category-badge" style="background-color: #f1f5f9; color: #1e293b; border: 1px solid #cbd5e1;">' +
       '<i class="' + catIconClass + '"></i> ' + escapeHTML(item.category) +
@@ -967,7 +973,7 @@ function displayCurrentReportItem() {
       '<small style="color: #64748b; font-size: 0.76rem; font-weight: 500;">• ' + escapeHTML(urgDesc) + '</small>' +
     '</div>';
   
-  // 🕒 จัดการวัน-เวลาที่แจ้ง และคำนวณระยะเวลารอปรับปรุง / ระยะเวลาดำเนินงาน
+  // 🕒 คำนวณวัน-เวลา และระยะเวลา
   var reportedAtRow = document.getElementById('mReportedAtRow');
   var reportedAtElem = document.getElementById('mReportedAt');
   var durationRow = document.getElementById('mDurationRow');
@@ -978,17 +984,18 @@ function displayCurrentReportItem() {
     if (reportedAtElem) reportedAtElem.innerText = item.reportedAt;
     if (reportedAtRow) reportedAtRow.style.display = 'flex';
 
-    var durationInfo = formatDurationTime(item.reportedAt, isResolved ? item.completedDate : null);
+    var durationInfo = (typeof formatDurationTime === 'function') 
+      ? formatDurationTime(item.reportedAt, isResolved ? item.completedDate : null) 
+      : null;
+
     if (durationInfo && durationRow && durationElem) {
       durationRow.style.display = 'flex';
-
       if (isResolved) {
         if (durationLabel) durationLabel.innerHTML = '<i class="fa-solid fa-clock-rotate-left"></i> ใช้เวลาดำเนินการ:';
-        durationElem.innerHTML = '<span class="text-emerald" style="color: #047857; font-weight: 600;">' + escapeHTML(durationInfo.text) + '</span>';
+        durationElem.innerHTML = '<span style="color: #047857; font-weight: 600;">' + escapeHTML(durationInfo.text) + '</span>';
       } else {
         if (durationLabel) durationLabel.innerHTML = '<i class="fa-solid fa-hourglass-half"></i> รอปรับปรุงมาแล้ว:';
-        var isDelayed = durationInfo.days >= 7;
-        var badgeColor = isDelayed ? '#e11d48' : '#d97706'; // เกิน 7 วันเน้นสีแดง เตือนความล่าช้า
+        var badgeColor = (durationInfo.days >= 7) ? '#e11d48' : '#d97706';
         durationElem.innerHTML = '<span style="color: ' + badgeColor + '; font-weight: 700;">' + escapeHTML(durationInfo.text) + '</span>';
       }
     } else if (durationRow) {
@@ -999,6 +1006,7 @@ function displayCurrentReportItem() {
     if (durationRow) durationRow.style.display = 'none';
   }
 
+  // หมายเหตุเดิม
   var notesElem = document.getElementById('mNotes');
   var notesRow = document.getElementById('mNotesRow');
   if (item.notes && item.notes !== '-') {
@@ -1008,6 +1016,7 @@ function displayCurrentReportItem() {
     notesRow.style.display = 'none';
   }
 
+  // 🖼️ จัดการการแสดงรูปภาพเดี่ยว vs คู่ (แก้ปัญหาภาพที่ 1 & 3)
   var banner = document.getElementById('resolvedStatusBanner');
   var actionBlock = document.getElementById('mResolvedActionBlock');
   var imagesWrapper = document.getElementById('modalImagesWrapper');
@@ -1036,17 +1045,19 @@ function displayCurrentReportItem() {
         if (fallbackAfter) fallbackAfter.style.display = 'flex';
       }
     }
+    // มี 2 รูป ขยายเป็น 2 ฝั่งคู่กัน
     if (imagesWrapper) imagesWrapper.classList.add('is-compare');
   } else {
     if (banner) banner.style.display = 'none';
     if (actionBlock) actionBlock.style.display = 'none';
     if (boxAfter) boxAfter.style.display = 'none';
+    // มีรูปเดียวก่อนปรับปรุง -> ยืดเต็มความกว้าง 100% เหมือนเดิม
     if (imagesWrapper) imagesWrapper.classList.remove('is-compare');
   }
 
+  // โหลดภาพก่อนทำ
   var imgElem = document.getElementById('modalImage');
   var fallback = document.getElementById('noImageFallback');
-
   if (item.imageUrl && item.imageId) {
     imgElem.setAttribute('data-image-id', item.imageId);
     imgElem.src = item.imageUrl;
@@ -1058,6 +1069,7 @@ function displayCurrentReportItem() {
     if (fallback) fallback.style.display = 'flex';
   }
 
+  // ปุ่มดำเนินการของเจ้าหน้าที่
   var actionsContainer = document.getElementById('adminActionsContainer');
   if (!isResolved && currentUser.loggedIn && (currentUser.role === 'admin' || currentUser.dept === item.department)) {
     actionsContainer.style.display = 'grid';
@@ -1080,7 +1092,6 @@ function displayCurrentReportItem() {
     footerNav.style.display = 'none';
   }
 }
-
 function prevReportItem() {
   if (currentActiveGroup && currentActiveIndex > 0) {
     currentActiveIndex--;
