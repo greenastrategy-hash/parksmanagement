@@ -473,20 +473,16 @@ body {
 }
 
 /* =========================================================
-   6. Modals (ล็อกตำแหน่งตรงกลาง ป้องกันการหลุดจอ 100%)
+   6. Modals (ปรับความเร็วสูง: ตัด Filter Blur และ Animation ออก)
    ========================================================= */
 .modal {
   display: none;
   position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  bottom: 0 !important;
+  inset: 0 !important;
   width: 100% !important;
   height: 100% !important;
-  background: rgba(15, 23, 42, 0.65) !important;
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  /* 🚀 เปลี่ยนจาก blur หนักๆ เป็นพื้นหลังทึบแสงบางๆ แบบเรียบ ทำให้การ์ดเปิดทันที 100% */
+  background: rgba(15, 23, 42, 0.6) !important;
   z-index: 99999 !important;
   align-items: center !important;
   justify-content: center !important;
@@ -506,7 +502,10 @@ body {
   position: relative !important;
   margin: auto !important;
   overflow: hidden !important;
-  animation: modalIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  /* 🚀 ปิด Animation เฟด/ป๊อป ที่ทำให้เบราว์เซอร์หน่วงตอนเปิดหน้าต่าง */
+  animation: none !important;
+  transform: none !important;
+  transition: none !important;
 }
 
 @keyframes modalIn {
