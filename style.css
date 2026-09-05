@@ -1301,3 +1301,14 @@ body {
   .btn-map-focus { bottom: 20px; left: 10px; }
   .btn-map-locate { bottom: 64px; left: 10px; }
 }
+
+.nav-buttons, .pagination-container {
+  position: fixed;
+  bottom: calc(16px + env(safe-area-inset-bottom)); /* ยกปุ่มขึ้นมาพ้นแถบควบคุมของเบราว์เซอร์ */
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  z-index: 999; /* ให้แสดงทับเนื้อหาอื่น */
+}
