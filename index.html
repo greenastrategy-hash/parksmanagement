@@ -403,61 +403,7 @@
     </div><!-- จบ .modal-content -->
   </div><!-- จบ #detailModal -->
 
-  <!-- Modal: Resolve Action (บันทึกการปรับปรุงเสร็จสิ้น) -->
-  <div id="resolveConfirmModal" class="modal" style="display: none;">
-    <div class="modal-content auth-card" style="max-width: 480px;">
-      <div class="modal-header">
-        <h3 style="margin: 0; font-size: 1.05rem; color: #166534;">
-          <i class="fa-solid fa-circle-check"></i> บันทึกการปรับปรุงเสร็จสิ้น
-        </h3>
-        <button type="button" class="close-btn" onclick="closeResolveConfirmModal()">&times;</button>
-      </div>
-      <div class="modal-body form-body" style="display: flex; flex-direction: column; gap: 12px;">
-        <div id="resolveSummaryInfo" style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 10px; font-size: 0.85rem; color: #14532d;"></div>
-        
-        <div class="form-group" style="text-align: left;">
-          <label style="font-weight: 600; font-size: 0.85rem; color: #1e293b; display: block; margin-bottom: 4px;">
-            📝 รายละเอียดการดำเนินการ / วิธีแก้ไข <span style="color: #dc2626;">*</span>
-          </label>
-          <textarea id="resolveActionDetail" class="form-input" rows="3" placeholder="ระบุรายละเอียด เช่น เปลี่ยนอุปกรณ์ใหม่, ซ่อมแซมเรียบร้อยแล้ว..." required style="width: 100%;"></textarea>
-        </div>
-
-        <!-- ส่วนแนบภาพหลังปรับปรุง -->
-        <div class="form-group" style="text-align: left;">
-          <label style="font-weight: 600; font-size: 0.85rem; color: #1e293b; display: block; margin-bottom: 4px;">
-            📷 ภาพถ่ายหลังการปรับปรุง (ถ้ามี)
-          </label>
-          
-          <div class="image-upload-btn-group">
-            <label class="btn-img-action btn-camera">
-              <i class="fa-solid fa-camera"></i> ถ่ายภาพ
-              <input type="file" id="resolveCameraInput" accept="image/jpeg,image/png,image/webp,image/*" capture="environment" onchange="handleResolveImageSelected(event)" class="native-hidden-input">
-            </label>
-            <label class="btn-img-action btn-gallery">
-              <i class="fa-solid fa-images"></i> เลือกจากคลังภาพ
-              <input type="file" id="resolveGalleryInput" accept="image/jpeg,image/png,image/webp,image/*" onchange="handleResolveImageSelected(event)" class="native-hidden-input">
-            </label>
-          </div>
-
-          <div id="resolveImagePreviewBox" class="image-preview-wrapper" style="display: none;">
-            <div class="preview-header">
-              <span><i class="fa-regular fa-image"></i> ตัวอย่างภาพหลังปรับปรุง:</span>
-              <button type="button" class="btn-remove-preview" onclick="clearResolveImagePreview()" title="ลบภาพนี้">
-                <i class="fa-solid fa-trash-can"></i> ลบภาพ
-              </button>
-            </div>
-            <img id="resolveImagePreview" src="" alt="ภาพหลังปรับปรุง" class="image-preview-box">
-          </div>
-        </div>
-      </div>
-      <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 8px;">
-        <button type="button" class="btn-cancel-pick" onclick="closeResolveConfirmModal()" style="padding: 6px 14px;">ยกเลิก</button>
-        <button type="button" id="btnSubmitResolve" class="btn-submit" onclick="submitResolveAction()" style="padding: 6px 18px; width: auto; background: #16a34a;">
-          <i class="fa-solid fa-check"></i> บันทึกเสร็จสิ้น
-        </button>
-      </div>
-    </div>
-  </div>
+  id="resolveConfirmModal
 
   <!-- Modal: Auth (ล็อกอินเจ้าหน้าที่) -->
   <div id="authModal" class="modal" style="display: none;">
