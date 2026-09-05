@@ -442,16 +442,16 @@
   </div>
 
   <!-- Modal: Auth -->
-  <div id="authModal" class="modal">
+  <div id="authModal" class="modal" style="display: none;">
     <div class="modal-content auth-card">
       <div class="modal-header">
         <h3><i class="fa-solid fa-lock"></i> ยืนยันรหัสเจ้าหน้าที่</h3>
-        <button class="close-btn" onclick="closeModal('authModal')">&times;</button>
+        <button type="button" class="close-btn" onclick="closeModal('authModal')">&times;</button>
       </div>
       <form onsubmit="handleAuthSubmit(event)" class="modal-body form-body">
         <p class="auth-hint">กรุณากรอกรหัสแอดมินหรือรหัสฝ่ายบริหารจัดการพื้นที่สีเขียว</p>
         <div class="form-group">
-          <input type="password" id="authCodeInput" placeholder="กรอกรหัสผ่าน 4-5 หลัก" required class="form-input text-center">
+          <input type="password" id="authCodeInput" placeholder="กรอกรหัสผ่าน 4-5 หลัก" required class="form-input text-center" autocomplete="current-password">
         </div>
         <button type="submit" id="authSubmitBtn" class="btn-submit">
           <i class="fa-solid fa-arrow-right-to-bracket"></i> ยืนยันรหัส
