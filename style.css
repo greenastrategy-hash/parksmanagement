@@ -1681,3 +1681,10 @@ svg.leaflet-zoom-animated,
   border-radius: 8px;
   background: #f8fafc;
 }
+
+.text-amber {
+  color: #d97706 !important;
+}
+.text-rose {
+  color: #e11d48 !important;
+}
