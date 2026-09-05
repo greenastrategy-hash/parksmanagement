@@ -373,35 +373,38 @@ function displayTableRows(dataList) {
 
   if (isResolvedTab) {
     thead.innerHTML = '<tr>' +
-                        '<th style="width: 45px; text-align: center;">#</th>' +
-                        '<th style="width: 120px;">หน่วยงาน</th>' +
-                        '<th style="width: 140px;">สวนสาธารณะ</th>' +
-                        '<th style="width: 110px;">บริเวณ</th>' +
-                        '<th style="width: 100px;">หมวดหมู่</th>' +
-                        '<th style="min-width: 150px;">สิ่งที่ปรับปรุง</th>' +
-                        '<th style="min-width: 160px;">วิธีการแก้ไข</th>' +
-                        '<th style="width: 65px; text-align: center;">ก่อน/หลัง</th>' +
-                        '<th style="width: 120px;">วันที่เสร็จสิ้น</th>' +
-                        '<th style="width: 100px;">ผู้ดำเนินการ</th>' +
-                        '<th style="width: 70px; text-align: center;">ดูข้อมูล</th>' +
+                        '<th style="width: 40px; text-align: center;">#</th>' +
+                        '<th style="width: 110px;">หน่วยงาน</th>' +
+                        '<th style="width: 130px;">สวนสาธารณะ</th>' +
+                        '<th style="width: 100px;">บริเวณ</th>' +
+                        '<th style="width: 90px;">หมวดหมู่</th>' +
+                        '<th style="min-width: 140px;">สิ่งที่ปรับปรุง</th>' +
+                        '<th style="min-width: 150px;">วิธีการแก้ไข</th>' +
+                        '<th style="width: 60px; text-align: center;">ก่อน/หลัง</th>' +
+                        '<th style="width: 110px;">วันที่แจ้ง</th>' +
+                        '<th style="width: 120px;">วันที่แล้วเสร็จ (ใช้เวลา)</th>' +
+                        '<th style="width: 90px;">ผู้ดำเนินการ</th>' +
+                        '<th style="width: 65px; text-align: center;">ดูข้อมูล</th>' +
                       '</tr>';
   } else {
     thead.innerHTML = '<tr>' +
-                        '<th style="width: 45px; text-align: center;">#</th>' +
-                        '<th style="width: 130px;">หน่วยงาน</th>' +
-                        '<th style="width: 140px;">สวนสาธารณะ</th>' +
-                        '<th style="width: 120px;">บริเวณ</th>' +
-                        '<th style="width: 110px;">หมวดหมู่</th>' +
-                        '<th style="min-width: 180px;">สิ่งที่ชำรุด / ปัญหา</th>' +
-                        '<th style="width: 120px; text-align: center;">ความเร่งด่วน</th>' +
-                        '<th style="width: 70px; text-align: center;">รูปภาพ</th>' +
-                        '<th style="width: 120px;">หมายเหตุ</th>' +
-                        '<th style="width: 85px; text-align: center;">จัดการ</th>' +
+                        '<th style="width: 40px; text-align: center;">#</th>' +
+                        '<th style="width: 120px;">หน่วยงาน</th>' +
+                        '<th style="width: 130px;">สวนสาธารณะ</th>' +
+                        '<th style="width: 110px;">บริเวณ</th>' +
+                        '<th style="width: 100px;">หมวดหมู่</th>' +
+                        '<th style="min-width: 160px;">สิ่งที่ชำรุด / ปัญหา</th>' +
+                        '<th style="width: 115px; text-align: center;">ความเร่งด่วน</th>' +
+                        '<th style="width: 125px;">วันที่แจ้ง / รอดำเนินการ</th>' +
+                        '<th style="width: 65px; text-align: center;">รูปภาพ</th>' +
+                        '<th style="width: 110px;">หมายเหตุ</th>' +
+                        '<th style="width: 75px; text-align: center;">จัดการ</th>' +
                       '</tr>';
   }
 
   if (dataList.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="11" class="text-center py-4 text-muted"><i class="fa-regular fa-circle-check"></i> ไม่พบข้อมูลในแท็บนี้ตามเงื่อนไขตัวกรอง</td></tr>';
+    var totalColspan = isResolvedTab ? 12 : 11;
+    tbody.innerHTML = '<tr><td colspan="' + totalColspan + '" class="text-center py-4 text-muted"><i class="fa-regular fa-circle-check"></i> ไม่พบข้อมูลในแท็บนี้ตามเงื่อนไขตัวกรอง</td></tr>';
     return;
   }
 
@@ -418,7 +421,16 @@ function displayTableRows(dataList) {
                              escapeHTML(urgencyLabels[item.urgency] || ('ระดับ ' + item.urgency)) +
                            '</span>';
 
+    // คำนวณระยะเวลา
+    var durationInfo = (typeof formatDurationTime === 'function' && item.reportedAt && item.reportedAt !== '-')
+      ? formatDurationTime(item.reportedAt, isResolvedTab ? item.completedDate : null)
+      : null;
+
     if (isResolvedTab) {
+      var durationResolvedBadge = durationInfo 
+        ? '<div style="font-size: 0.72rem; color: #047857; font-weight: 500;">(ใช้เวลา ' + escapeHTML(durationInfo.text) + ')</div>' 
+        : '';
+
       html += '<tr>' +
                 '<td style="text-align:center; font-weight:600; color:#64748b;">' + (i + 1) + '</td>' +
                 '<td>' + escapeHTML(item.department || '-') + '</td>' +
@@ -428,7 +440,11 @@ function displayTableRows(dataList) {
                 '<td><span style="color:#047857; font-weight:500;">✓ ' + escapeHTML(item.issue || '-') + '</span></td>' +
                 '<td><small style="color:#15803d; font-weight:500;">' + escapeHTML(item.actionDetail || '-') + '</small></td>' +
                 '<td style="text-align:center;">' + imgHtml + '</td>' +
-                '<td><small style="color:#475569; font-weight:500;">' + escapeHTML(item.completedDate || '-') + '</small></td>' +
+                '<td><small style="color:#64748b;">' + escapeHTML(item.reportedAt || '-') + '</small></td>' +
+                '<td>' +
+                  '<small style="color:#1e293b; font-weight:500;">' + escapeHTML(item.completedDate || '-') + '</small>' +
+                  durationResolvedBadge +
+                '</td>' +
                 '<td><span class="filter-tag active-tag">' + escapeHTML(item.operator || '-') + '</span></td>' +
                 '<td style="text-align:center;">' +
                   '<button type="button" class="btn-table-view" onclick="viewDetailFromTable(' + i + ')">' +
@@ -437,6 +453,15 @@ function displayTableRows(dataList) {
                 '</td>' +
               '</tr>';
     } else {
+      var durationPendingBadge = '';
+      if (durationInfo) {
+        var isDelayed = durationInfo.days >= 7;
+        var badgeColor = isDelayed ? '#e11d48' : '#d97706';
+        durationPendingBadge = '<div style="font-size: 0.73rem; font-weight: 600; color: ' + badgeColor + ';">' +
+                                 '<i class="fa-regular fa-clock"></i> รอมาแล้ว ' + escapeHTML(durationInfo.text) +
+                               '</div>';
+      }
+
       html += '<tr>' +
                 '<td style="text-align:center; font-weight:600; color:#64748b;">' + (i + 1) + '</td>' +
                 '<td>' + escapeHTML(item.department || '-') + '</td>' +
@@ -445,6 +470,10 @@ function displayTableRows(dataList) {
                 '<td><span class="filter-tag">' + escapeHTML(item.category || '-') + '</span></td>' +
                 '<td><span style="color:#b91c1c; font-weight:500;">' + escapeHTML(item.issue || '-') + '</span></td>' +
                 '<td style="text-align:center;">' + urgencyBadgeHtml + '</td>' +
+                '<td>' +
+                  '<div style="font-size: 0.8rem; color: #334155;">' + escapeHTML(item.reportedAt || '-') + '</div>' +
+                  durationPendingBadge +
+                '</td>' +
                 '<td style="text-align:center;">' + imgHtml + '</td>' +
                 '<td><small style="color:#64748b;">' + escapeHTML(item.notes !== '-' ? item.notes : '') + '</small></td>' +
                 '<td style="text-align:center;">' +
@@ -859,6 +888,54 @@ function openDetailModal(group, index) {
   document.getElementById('detailModal').style.display = 'flex';
 }
 
+// ฟังก์ชันแปลงข้อความวัน-เวลา (รองรับ dd/MM/yyyy HH:mm:ss หรือ dd/MM/yyyy HH:mm ทั้ง ค.ศ. และ พ.ศ.)
+function parseReportDate(dateStr) {
+  if (!dateStr || dateStr === '-' || typeof dateStr !== 'string') return null;
+  var parts = dateStr.trim().split(' ');
+  var dateParts = parts[0].split('/');
+  if (dateParts.length < 3) return null;
+
+  var day = parseInt(dateParts[0], 10);
+  var month = parseInt(dateParts[1], 10) - 1;
+  var year = parseInt(dateParts[2], 10);
+  if (year > 2500) year -= 543; // แปลงปี พ.ศ. เป็น ค.ศ.
+
+  var hours = 0, minutes = 0, seconds = 0;
+  if (parts[1]) {
+    var timeParts = parts[1].split(':');
+    hours = parseInt(timeParts[0], 10) || 0;
+    minutes = parseInt(timeParts[1], 10) || 0;
+    seconds = parseInt(timeParts[2], 10) || 0;
+  }
+
+  var d = new Date(year, month, day, hours, minutes, seconds);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+// ฟังก์ชันคำนวณระยะเวลา (คืนค่าข้อความและจำนวนวัน)
+function formatDurationTime(startDateStr, endDateStr) {
+  var startDate = parseReportDate(startDateStr);
+  if (!startDate) return null;
+
+  var endDate = endDateStr ? parseReportDate(endDateStr) : new Date();
+  if (!endDate) endDate = new Date();
+
+  var diffMs = endDate.getTime() - startDate.getTime();
+  if (diffMs < 0) diffMs = 0;
+
+  var diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  var diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+
+  var text = '';
+  if (diffDays === 0) {
+    text = (diffHours === 0) ? 'ไม่ถึง 1 ชั่วโมง' : (diffHours + ' ชั่วโมง');
+  } else {
+    text = diffDays + ' วัน' + (diffHours > 0 ? (' ' + diffHours + ' ชม.') : '');
+  }
+
+  return { text: text, days: diffDays };
+}
+
 function displayCurrentReportItem() {
   if (!currentActiveGroup || !currentActiveGroup.items.length) return;
 
@@ -890,6 +967,38 @@ function displayCurrentReportItem() {
       '<small style="color: #64748b; font-size: 0.76rem; font-weight: 500;">• ' + escapeHTML(urgDesc) + '</small>' +
     '</div>';
   
+  // 🕒 จัดการวัน-เวลาที่แจ้ง และคำนวณระยะเวลารอปรับปรุง / ระยะเวลาดำเนินงาน
+  var reportedAtRow = document.getElementById('mReportedAtRow');
+  var reportedAtElem = document.getElementById('mReportedAt');
+  var durationRow = document.getElementById('mDurationRow');
+  var durationLabel = document.getElementById('mDurationLabel');
+  var durationElem = document.getElementById('mDuration');
+
+  if (item.reportedAt && item.reportedAt !== '-') {
+    if (reportedAtElem) reportedAtElem.innerText = item.reportedAt;
+    if (reportedAtRow) reportedAtRow.style.display = 'flex';
+
+    var durationInfo = formatDurationTime(item.reportedAt, isResolved ? item.completedDate : null);
+    if (durationInfo && durationRow && durationElem) {
+      durationRow.style.display = 'flex';
+
+      if (isResolved) {
+        if (durationLabel) durationLabel.innerHTML = '<i class="fa-solid fa-clock-rotate-left"></i> ใช้เวลาดำเนินการ:';
+        durationElem.innerHTML = '<span class="text-emerald" style="color: #047857; font-weight: 600;">' + escapeHTML(durationInfo.text) + '</span>';
+      } else {
+        if (durationLabel) durationLabel.innerHTML = '<i class="fa-solid fa-hourglass-half"></i> รอปรับปรุงมาแล้ว:';
+        var isDelayed = durationInfo.days >= 7;
+        var badgeColor = isDelayed ? '#e11d48' : '#d97706'; // เกิน 7 วันเน้นสีแดง เตือนความล่าช้า
+        durationElem.innerHTML = '<span style="color: ' + badgeColor + '; font-weight: 700;">' + escapeHTML(durationInfo.text) + '</span>';
+      }
+    } else if (durationRow) {
+      durationRow.style.display = 'none';
+    }
+  } else {
+    if (reportedAtRow) reportedAtRow.style.display = 'none';
+    if (durationRow) durationRow.style.display = 'none';
+  }
+
   var notesElem = document.getElementById('mNotes');
   var notesRow = document.getElementById('mNotesRow');
   if (item.notes && item.notes !== '-') {
@@ -1869,6 +1978,7 @@ function submitResolveAction() {
     lng: pendingResolveItem.lng,
     imageId: pendingResolveItem.imageId,
     notes: pendingResolveItem.notes,
+    reportedAt: pendingResolveItem.reportedAt || '-', // 🕒 ส่งวัน-เวลาที่แจ้งชำรุดเดิมไปด้วย
     actionDetail: actionDetail,
     afterImageFile: pendingResolveBase64
   };
@@ -2049,7 +2159,9 @@ function exportCurrentTableToCSV() {
       'ระดับความเร่งด่วน',
       'ละติจูด',
       'ลองจิจูด',
+      'วันที่แจ้งชำรุด',
       'วันที่เสร็จสิ้น',
+      'ระยะเวลาที่ใช้ดำเนินการ',
       'ผู้ดำเนินการปิดงาน',
       'วิธีการดำเนินการแก้ไข',
       'หมายเหตุเดิม',
@@ -2061,6 +2173,12 @@ function exportCurrentTableToCSV() {
       var beforeImgUrl = item.imageId ? ('https://drive.google.com/file/d/' + item.imageId + '/view') : '-';
       var afterImgUrl = item.afterImageId ? ('https://drive.google.com/file/d/' + item.afterImageId + '/view') : '-';
 
+      // คำนวณระยะเวลาการดำเนินงานจนแล้วเสร็จ
+      var durationInfo = (typeof formatDurationTime === 'function' && item.reportedAt && item.reportedAt !== '-')
+        ? formatDurationTime(item.reportedAt, item.completedDate)
+        : null;
+      var durationText = durationInfo ? durationInfo.text : '-';
+
       csvRows.push([
         idx + 1,
         item.department || '-',
@@ -2071,7 +2189,9 @@ function exportCurrentTableToCSV() {
         item.urgency || 1,
         item.lat || 0,
         item.lng || 0,
+        item.reportedAt || '-',
         item.completedDate || '-',
+        durationText,
         item.operator || '-',
         item.actionDetail || '-',
         (item.notes && item.notes !== '-') ? item.notes : '-',
@@ -2091,6 +2211,8 @@ function exportCurrentTableToCSV() {
       'ระดับความเสี่ยง (คำอธิบาย)',
       'ละติจูด',
       'ลองจิจูด',
+      'วันที่แจ้งชำรุด',
+      'ระยะเวลารอดำเนินการ',
       'หมายเหตุ',
       'ลิงก์ภาพถ่ายความเสียหาย'
     ]);
@@ -2098,6 +2220,12 @@ function exportCurrentTableToCSV() {
     dataToExport.forEach(function(item, idx) {
       var imgUrl = item.imageId ? ('https://drive.google.com/file/d/' + item.imageId + '/view') : '-';
       var urgTitle = urgencyLabels[item.urgency] || ('ระดับ ' + item.urgency);
+
+      // คำนวณระยะเวลาที่รอดำเนินการจนถึงปัจจุบัน
+      var durationInfo = (typeof formatDurationTime === 'function' && item.reportedAt && item.reportedAt !== '-')
+        ? formatDurationTime(item.reportedAt, null)
+        : null;
+      var durationText = durationInfo ? durationInfo.text : '-';
 
       csvRows.push([
         idx + 1,
@@ -2110,12 +2238,15 @@ function exportCurrentTableToCSV() {
         urgTitle,
         item.lat || 0,
         item.lng || 0,
+        item.reportedAt || '-',
+        durationText,
         (item.notes && item.notes !== '-') ? item.notes : '-',
         imgUrl
       ]);
     });
   }
 
+  // แปลง Array เป็นข้อความ CSV พร้อมรองรับการ Escape เครื่องหมายคำพูด
   var csvString = csvRows.map(function(row) {
     return row.map(function(field) {
       var str = String(field === null || field === undefined ? '' : field);
@@ -2123,6 +2254,7 @@ function exportCurrentTableToCSV() {
     }).join(',');
   }).join('\r\n');
 
+  // \uFEFF สำหรับ BOM ป้องกันปัญหาภาษาไทยเพี้ยนใน MS Excel
   var blob = new Blob(['\uFEFF' + csvString], { type: 'text/csv;charset=utf-8;' });
   
   var now = new Date();
