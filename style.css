@@ -1240,3 +1240,54 @@ body {
     grid-template-columns: 1fr !important;
   }
 }
+
+/* =========================================================
+   Pagination Controls สำหรับตารางข้อมูล (ลื่นไหล ไม่โหลดหนัก)
+   ========================================================= */
+.table-pagination-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.table-page-btns {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-page-nav {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-family: 'Kanit', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+
+.btn-page-nav:hover:not(:disabled) {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+.btn-page-nav:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.page-current-text {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #0f172a;
+  padding: 0 4px;
+}
